@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Bewonersportaal, binnenkort, Sluiskade</title>
+  {% include "_head_meta.html" %}
+
+  <style>
+    :root {
+      --deep:  #0c4a6e;
+      --water: #0ea5e9;
+      --foam:  #e0f2fe;
+      --ink:   #0f172a;
+      --paper: #f8fafc;
+      --muted: #64748b;
+      --soft:  #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, var(--foam) 0%, var(--paper) 60%, #ffffff 100%);
+    }
+
+    .stage {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem 6rem;
+      text-align: center;
+    }
+
+    .card {
+      background: var(--soft);
+      border: 1px solid #e2e8f0;
+      border-radius: 1.25rem;
+      padding: 2.75rem 2rem;
+      max-width: 28rem;
+      width: 100%;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.9rem;
+      background: rgba(14, 165, 233, 0.1);
+      border: 1px solid rgba(14, 165, 233, 0.25);
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--deep);
+      margin-bottom: 1.5rem;
+    }
+    .badge::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--water);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7); }
+      70%  { box-shadow: 0 0 0 10px rgba(14, 165, 233, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+    }
+
+    h1 {
+      font-size: clamp(1.85rem, 5vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--deep);
+      margin: 0 0 1rem;
+      line-height: 1.15;
+    }
+
+    p {
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin: 0 0 1.5rem;
+    }
+
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--water);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: gap 0.2s ease;
+    }
+    .back:hover { gap: 0.75rem; }
+
+    footer {
+      margin-top: 3rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  {% from "_icons.html" import icon %}
+
+  <main class="stage">
+    <div class="card">
+      <div class="badge">Binnenkort</div>
+      <h1>Het bewonersportaal staat in de steigers.</h1>
+      <p>We werken aan de magic-link login en de fotogalerij voor de toekomstige bewoners van de Sluiskade. Zodra hij klaar is log je hier in met je e-mailadres en krijg je toegang tot alle bouwfoto's.</p>
+      <a href="{{ url_for('index') }}" class="back">
+        {{ icon("arrow-left", size=18, stroke=2.25) }}
+        Terug naar de startpagina
+      </a>
+    </div>
+
+    <footer>Sluiskade</footer>
+  </main>
+
+</body>
+</html>

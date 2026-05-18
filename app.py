@@ -74,6 +74,12 @@ def healthz():
     return {"status": "ok"}, 200
 
 
+@app.route("/portaal")
+def portaal_index():
+    """Placeholder for the bewoners-portaal. Real login flow comes next."""
+    return render_template("portaal/index.html")
+
+
 # ---------------------------------------------------------------------------
 # Sluiswachter flow
 # ---------------------------------------------------------------------------

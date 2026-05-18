@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Inloggen, Sluiskade</title>
+  {% include "_head_meta.html" %}
+
+  <style>
+    :root {
+      --deep:  #0c4a6e;
+      --water: #0ea5e9;
+      --foam:  #e0f2fe;
+      --ink:   #0f172a;
+      --paper: #f8fafc;
+      --muted: #64748b;
+      --soft:  #ffffff;
+      --warn:  #b45309;
+      --warn-bg: #fef3c7;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, var(--foam) 0%, var(--paper) 60%, #ffffff 100%);
+    }
+
+    .stage {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    .container { width: 100%; max-width: 26rem; }
+
+    header { text-align: center; margin-bottom: 1.5rem; }
+
+    .wave-mark { color: var(--water); margin: 0 auto 1rem; display: block; }
+
+    h1 {
+      font-size: clamp(1.6rem, 5vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--deep);
+      margin: 0 0 0.5rem;
+      line-height: 1.15;
+    }
+    header p {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .card {
+      background: var(--soft);
+      border: 1px solid #e2e8f0;
+      border-radius: 1.25rem;
+      padding: 2rem 1.75rem;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    }
+
+    .alert {
+      display: flex;
+      gap: 0.75rem;
+      padding: 0.9rem 1.1rem;
+      background: var(--warn-bg);
+      border: 1px solid #fde68a;
+      border-radius: 0.75rem;
+      color: var(--warn);
+      font-size: 0.9rem;
+      margin-bottom: 1.25rem;
+      line-height: 1.5;
+    }
+    .alert svg { flex-shrink: 0; margin-top: 1px; }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--deep);
+      margin-bottom: 0.4rem;
+    }
+
+    input[type="email"] {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      font-size: 1rem;
+      font-family: inherit;
+      color: var(--ink);
+      background: var(--paper);
+      border: 1px solid #cbd5e1;
+      border-radius: 0.65rem;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    input[type="email"]:focus {
+      border-color: var(--water);
+      background: white;
+      box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.12);
+    }
+
+    .submit {
+      width: 100%;
+      margin-top: 1.25rem;
+      padding: 0.95rem 1.5rem;
+      background: var(--water);
+      color: white;
+      font-weight: 600;
+      font-size: 1rem;
+      font-family: inherit;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.3);
+      transition: transform 0.1s ease;
+    }
+    .submit:hover { transform: translateY(-1px); }
+    .submit svg { flex-shrink: 0; }
+
+    .request-link {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .request-link a {
+      color: var(--water);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .request-link a:hover { text-decoration: underline; }
+
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 2rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+    .back:hover { color: var(--deep); }
+  </style>
+</head>
+<body>
+  {% from "_icons.html" import icon %}
+
+  <main class="stage">
+    <div class="container">
+      <header>
+        {{ icon("wave-decoration", class="wave-mark") }}
+        <h1>Welkom in het bewonersportaal.</h1>
+        <p>Vul je e-mailadres in. We sturen je een eenmalige code waarmee je binnen kan.</p>
+      </header>
+
+      <div class="card">
+        {% if error %}
+        <div class="alert" role="alert">
+          {{ icon("alert-triangle", size=20, stroke=2) }}
+          <span>{{ error }}</span>
+        </div>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('portaal_login') }}" novalidate>
+          <label for="email">E-mailadres</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            value="{{ email or '' }}"
+            placeholder="jij@voorbeeld.nl"
+            autocomplete="email"
+            autocapitalize="none"
+            autocorrect="off"
+            spellcheck="false"
+            required
+            autofocus
+          />
+          <button class="submit" type="submit">
+            Stuur me een code
+            {{ icon("arrow-right", size=18, stroke=2.25) }}
+          </button>
+        </form>
+
+        <div class="request-link">
+          {% if show_request_link %}
+            Nog geen toegang?
+            <a href="mailto:beheer@sluiskade.com?subject=Toegang%20Sluiskade%20portaal&body=Hoi,%0A%0AIk%20wil%20graag%20toegang%20tot%20het%20bewonersportaal.%0A%0AVoornaam:%0AAchternaam:%0AE-mail:%0A%0A">Vraag het aan via e-mail.</a>
+          {% else %}
+            Nog geen account?
+            <a href="mailto:beheer@sluiskade.com?subject=Toegang%20Sluiskade%20portaal">Vraag toegang aan</a>
+          {% endif %}
+        </div>
+      </div>
+
+      <a class="back" href="{{ url_for('index') }}">
+        {{ icon("arrow-left", size=16, stroke=2.25) }}
+        Terug naar de startpagina
+      </a>
+    </div>
+  </main>
+
+</body>
+</html>

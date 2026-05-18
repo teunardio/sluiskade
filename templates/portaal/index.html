@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <title>Bewonersportaal, binnenkort, Sluiskade</title>
+  <title>Bewonersportaal, Sluiskade</title>
   {% include "_head_meta.html" %}
 
   <style>
@@ -27,105 +27,144 @@
       background: linear-gradient(180deg, var(--foam) 0%, var(--paper) 60%, #ffffff 100%);
     }
 
-    .stage {
-      min-height: 100vh;
+    .topbar {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 2rem 1.5rem 6rem;
-      text-align: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid #e2e8f0;
     }
 
-    .card {
-      background: var(--soft);
-      border: 1px solid #e2e8f0;
-      border-radius: 1.25rem;
-      padding: 2.75rem 2rem;
-      max-width: 28rem;
-      width: 100%;
-      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    .brand {
+      font-weight: 700;
+      color: var(--deep);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+    .brand span { color: var(--water); font-weight: 400; }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--muted);
     }
 
-    .badge {
+    .logout {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.4rem 0.9rem;
-      background: rgba(14, 165, 233, 0.1);
-      border: 1px solid rgba(14, 165, 233, 0.25);
+      gap: 0.4rem;
+      padding: 0.45rem 0.85rem;
+      background: transparent;
+      border: 1px solid #e2e8f0;
+      color: var(--muted);
       border-radius: 999px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--deep);
-      margin-bottom: 1.5rem;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85rem;
+      transition: all 0.15s ease;
     }
-    .badge::before {
-      content: '';
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--water);
-      animation: pulse 2s infinite;
+    .logout:hover { color: var(--deep); border-color: var(--deep); }
+
+    .stage {
+      padding: 3rem 1.5rem 6rem;
+      max-width: 56rem;
+      margin: 0 auto;
     }
-    @keyframes pulse {
-      0%   { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7); }
-      70%  { box-shadow: 0 0 0 10px rgba(14, 165, 233, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+
+    .welcome {
+      text-align: center;
+      margin-bottom: 2.5rem;
     }
+
+    .wave-mark { color: var(--water); margin: 0 auto 1rem; display: block; }
 
     h1 {
       font-size: clamp(1.85rem, 5vw, 2.5rem);
       font-weight: 700;
       letter-spacing: -0.02em;
       color: var(--deep);
-      margin: 0 0 1rem;
+      margin: 0 0 0.5rem;
       line-height: 1.15;
     }
 
-    p {
+    .welcome p {
       font-size: 1rem;
       color: var(--muted);
-      line-height: 1.6;
-      margin: 0 0 1.5rem;
+      margin: 0;
+      line-height: 1.5;
+      max-width: 32rem;
+      margin: 0 auto;
     }
 
-    .back {
+    .card {
+      background: var(--soft);
+      border: 1px solid #e2e8f0;
+      border-radius: 1.25rem;
+      padding: 3rem 2rem;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    }
+
+    .card-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--foam);
+      color: var(--water);
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
-      color: var(--water);
-      text-decoration: none;
-      font-weight: 500;
-      font-size: 0.95rem;
-      transition: gap 0.2s ease;
+      justify-content: center;
+      margin: 0 auto 1rem;
     }
-    .back:hover { gap: 0.75rem; }
 
-    footer {
-      margin-top: 3rem;
-      font-size: 0.75rem;
+    .card h2 {
+      font-size: 1.2rem;
+      color: var(--deep);
+      margin: 0 0 0.5rem;
+    }
+
+    .card p {
+      font-size: 0.95rem;
       color: var(--muted);
+      margin: 0;
+      line-height: 1.5;
+      max-width: 28rem;
+      margin: 0 auto;
     }
   </style>
 </head>
 <body>
   {% from "_icons.html" import icon %}
 
+  <nav class="topbar">
+    <a class="brand" href="{{ url_for('portaal_index') }}">Sluis<span>kade</span></a>
+    <div class="topbar-right">
+      <span>{{ email }}</span>
+      <form method="post" action="{{ url_for('portaal_logout') }}" style="margin: 0;">
+        <button class="logout" type="submit">
+          Uitloggen
+          {{ icon("arrow-right", size=14, stroke=2.25) }}
+        </button>
+      </form>
+    </div>
+  </nav>
+
   <main class="stage">
-    <div class="card">
-      <div class="badge">Binnenkort</div>
-      <h1>Het bewonersportaal staat in de steigers.</h1>
-      <p>We werken aan de magic-link login en de fotogalerij voor de toekomstige bewoners van de Sluiskade. Zodra hij klaar is log je hier in met je e-mailadres en krijg je toegang tot alle bouwfoto's.</p>
-      <a href="{{ url_for('index') }}" class="back">
-        {{ icon("arrow-left", size=18, stroke=2.25) }}
-        Terug naar de startpagina
-      </a>
+    <div class="welcome">
+      {{ icon("wave-decoration", class="wave-mark") }}
+      <h1>Je bent binnen.</h1>
+      <p>Welkom in het bewonersportaal van Sluiskade. De fotogalerij verschijnt hier zodra die klaar is.</p>
     </div>
 
-    <footer>Sluiskade</footer>
+    <div class="card">
+      <div class="card-icon">{{ icon("image", size=28, stroke=2) }}</div>
+      <h2>Galerij komt binnenkort</h2>
+      <p>Hier zie je straks alle foto's die de sluiswachters vanuit het sluiswachtershuis hebben geschoten. We zijn er nu mee bezig, het duurt niet lang meer.</p>
+    </div>
   </main>
 
 </body>

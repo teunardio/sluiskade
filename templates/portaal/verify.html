@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Code invoeren, Sluiskade</title>
+  {% include "_head_meta.html" %}
+
+  <style>
+    :root {
+      --deep:  #0c4a6e;
+      --water: #0ea5e9;
+      --foam:  #e0f2fe;
+      --ink:   #0f172a;
+      --paper: #f8fafc;
+      --muted: #64748b;
+      --soft:  #ffffff;
+      --warn:  #b45309;
+      --warn-bg: #fef3c7;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, var(--foam) 0%, var(--paper) 60%, #ffffff 100%);
+    }
+
+    .stage {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    .container { width: 100%; max-width: 26rem; }
+
+    header { text-align: center; margin-bottom: 1.5rem; }
+
+    .badge {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--foam);
+      color: var(--water);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+    }
+
+    h1 {
+      font-size: clamp(1.6rem, 5vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--deep);
+      margin: 0 0 0.5rem;
+      line-height: 1.15;
+    }
+    header p {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.5;
+    }
+    header strong {
+      color: var(--deep);
+      font-weight: 600;
+    }
+
+    .card {
+      background: var(--soft);
+      border: 1px solid #e2e8f0;
+      border-radius: 1.25rem;
+      padding: 2rem 1.75rem;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    }
+
+    .alert {
+      display: flex;
+      gap: 0.75rem;
+      padding: 0.9rem 1.1rem;
+      background: var(--warn-bg);
+      border: 1px solid #fde68a;
+      border-radius: 0.75rem;
+      color: var(--warn);
+      font-size: 0.9rem;
+      margin-bottom: 1.25rem;
+      line-height: 1.5;
+    }
+    .alert svg { flex-shrink: 0; margin-top: 1px; }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--deep);
+      margin-bottom: 0.4rem;
+      text-align: center;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1.6rem;
+      letter-spacing: 0.4em;
+      text-align: center;
+      font-family: 'SF Mono', Menlo, Consolas, monospace;
+      color: var(--deep);
+      background: var(--paper);
+      border: 1px solid #cbd5e1;
+      border-radius: 0.65rem;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    input[type="text"]:focus {
+      border-color: var(--water);
+      background: white;
+      box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.12);
+    }
+
+    .submit {
+      width: 100%;
+      margin-top: 1.25rem;
+      padding: 0.95rem 1.5rem;
+      background: var(--water);
+      color: white;
+      font-weight: 600;
+      font-size: 1rem;
+      font-family: inherit;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.3);
+      transition: transform 0.1s ease;
+    }
+    .submit:hover { transform: translateY(-1px); }
+    .submit svg { flex-shrink: 0; }
+
+    .retry-link {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .retry-link a {
+      color: var(--water);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .retry-link a:hover { text-decoration: underline; }
+
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 2rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-decoration: none;
+    }
+    .back:hover { color: var(--deep); }
+  </style>
+</head>
+<body>
+  {% from "_icons.html" import icon %}
+
+  <main class="stage">
+    <div class="container">
+      <header>
+        <div class="badge">{{ icon("mail", size=28, stroke=2) }}</div>
+        <h1>Check je inbox.</h1>
+        <p>We hebben een code gestuurd naar <strong>{{ email }}</strong>. Tik hem hieronder in. De code is 15 minuten geldig.</p>
+      </header>
+
+      <div class="card">
+        {% if error %}
+        <div class="alert" role="alert">
+          {{ icon("alert-triangle", size=20, stroke=2) }}
+          <span>{{ error }}</span>
+        </div>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('portaal_verify') }}" novalidate>
+          <input type="hidden" name="email" value="{{ email }}" />
+          <label for="code">6-cijferige code</label>
+          <input
+            type="text"
+            id="code"
+            name="code"
+            inputmode="numeric"
+            pattern="[0-9]{6}"
+            maxlength="6"
+            autocomplete="one-time-code"
+            placeholder="000000"
+            required
+            autofocus
+          />
+          <button class="submit" type="submit">
+            Inloggen
+            {{ icon("arrow-right", size=18, stroke=2.25) }}
+          </button>
+        </form>
+
+        <div class="retry-link">
+          Geen code ontvangen?
+          <a href="{{ url_for('portaal_login') }}">Probeer opnieuw</a>
+        </div>
+      </div>
+
+      <a class="back" href="{{ url_for('portaal_login') }}">
+        {{ icon("arrow-left", size=16, stroke=2.25) }}
+        Ander e-mailadres gebruiken
+      </a>
+    </div>
+  </main>
+
+  <script>
+    // Auto-submit when 6 digits typed, smooth UX for mobile auto-fill
+    (function() {
+      const input = document.getElementById('code');
+      const form = input.closest('form');
+      input.addEventListener('input', () => {
+        // Strip non-digits
+        input.value = input.value.replace(/\D/g, '').slice(0, 6);
+        if (input.value.length === 6) {
+          // Tiny delay so the user sees the full code before submit
+          setTimeout(() => form.submit(), 120);
+        }
+      });
+    })();
+  </script>
+
+</body>
+</html>

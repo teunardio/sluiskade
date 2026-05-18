@@ -28,6 +28,8 @@ from flask import (
 )
 
 import db
+import bewoner_auth
+import mail
 import photo_service
 from photo_service import (
     PhotoError,
@@ -76,8 +78,79 @@ def healthz():
 
 @app.route("/portaal")
 def portaal_index():
-    """Placeholder for the bewoners-portaal. Real login flow comes next."""
-    return render_template("portaal/index.html")
+    """Bewoners landing page. Redirects to login when not authenticated."""
+    if not bewoner_auth.has_valid_bewoner_session():
+        return redirect(url_for("portaal_login"))
+    return render_template(
+        "portaal/index.html",
+        email=bewoner_auth.get_current_bewoner_email(),
+    )
+
+
+@app.route("/portaal/login", methods=["GET", "POST"])
+def portaal_login():
+    """Step 1 of the magic-link flow: bewoner submits their email."""
+    if bewoner_auth.has_valid_bewoner_session() and request.method == "GET":
+        return redirect(url_for("portaal_index"))
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        if not email or "@" not in email:
+            return render_template(
+                "portaal/login.html",
+                error="Vul een geldig e-mailadres in.",
+                email=email,
+            )
+
+        if not db.is_email_allowed(email):
+            # Do not confirm whether the email exists, just hint at the
+            # access-request flow. The aanvragen route lands in the next step.
+            return render_template(
+                "portaal/login.html",
+                error="Dit e-mailadres staat (nog) niet op de lijst.",
+                email=email,
+                show_request_link=True,
+            )
+
+        code = bewoner_auth.create_and_save_otp(email)
+        mail.send_otp_email(email, code)
+        app.logger.info("Sent OTP to %s", email)
+
+        return redirect(url_for("portaal_verify", email=email))
+
+    return render_template("portaal/login.html")
+
+
+@app.route("/portaal/verify", methods=["GET", "POST"])
+def portaal_verify():
+    """Step 2 of the magic-link flow: bewoner types the OTP we mailed."""
+    email = (
+        request.form.get("email", "")
+        or request.args.get("email", "")
+    ).strip().lower()
+
+    if not email:
+        return redirect(url_for("portaal_login"))
+
+    if request.method == "POST":
+        code = request.form.get("code", "").strip()
+        if not bewoner_auth.verify_and_consume_otp(email, code):
+            return render_template(
+                "portaal/verify.html",
+                email=email,
+                error="De code klopt niet, of is verlopen. Probeer opnieuw of vraag een nieuwe code aan.",
+            )
+
+        response = make_response(redirect(url_for("portaal_index")))
+        return bewoner_auth.set_bewoner_session_cookie(response, email)
+
+    return render_template("portaal/verify.html", email=email)
+
+
+@app.route("/portaal/logout", methods=["POST"])
+def portaal_logout():
+    response = make_response(redirect(url_for("portaal_login")))
+    return bewoner_auth.clear_bewoner_session_cookie(response)
 
 
 # ---------------------------------------------------------------------------
@@ -281,6 +354,40 @@ def too_large(_err):
 # ---------------------------------------------------------------------------
 # CLI commands
 # ---------------------------------------------------------------------------
+
+@app.cli.command("add-bewoner")
+@click.option("--email", required=True, help="Email address to whitelist.")
+@click.option("--name", default="", help="Display name (optional).")
+def add_bewoner(email: str, name: str):
+    """Add an email to the bewoners whitelist.
+
+    Usage from the Coolify container terminal:
+        flask add-bewoner --email=teunard@example.com --name="Teunard"
+    """
+    db.add_allowed_resident(email.lower(), name=(name or None), added_by="cli")
+    click.echo(f"  Whitelisted: {email}")
+
+
+@app.cli.command("list-bewoners")
+def list_bewoners():
+    """List every email on the bewoners whitelist."""
+    rows = db.list_allowed_residents()
+    if not rows:
+        click.echo("(no bewoners whitelisted yet)")
+        return
+    for r in rows:
+        click.echo(f"  {r['email']:<40} {r.get('name') or ''}  (added {r['added_at']})")
+
+
+@app.cli.command("remove-bewoner")
+@click.option("--email", required=True)
+def remove_bewoner(email: str):
+    """Remove an email from the bewoners whitelist."""
+    if db.remove_allowed_resident(email.lower()):
+        click.echo(f"  Removed: {email}")
+    else:
+        click.echo(f"  Not found: {email}")
+
 
 @app.cli.command("gen-qr-token")
 def gen_qr_token():

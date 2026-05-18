@@ -1,10 +1,10 @@
 FROM python:3.12-slim
 
 # System dependencies:
-#   libjpeg-dev / zlib1g-dev / libwebp-dev  → Pillow image codecs
-#   libheif-dev                              → pillow-heif (iPhone HEIC photos)
-#   libmagic1                                → python-magic (magic-byte detection)
-#   curl                                     → healthcheck
+#   libjpeg-dev / zlib1g-dev / libwebp-dev  -> Pillow image codecs
+#   libheif-dev                              -> pillow-heif (iPhone HEIC photos)
+#   libmagic1                                -> python-magic (magic-byte detection)
+#   curl                                     -> healthcheck
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libjpeg-dev \
     zlib1g-dev \

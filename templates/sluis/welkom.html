@@ -42,21 +42,26 @@
       text-align: center;
     }
 
-    .greet {
-      font-size: 3rem;
-      margin-bottom: 0.5rem;
-      animation: wave 1.6s ease-in-out;
-      transform-origin: 70% 70%;
-      display: inline-block;
+    .card {
+      background: var(--soft);
+      border: 1px solid #e2e8f0;
+      border-radius: 1.25rem;
+      padding: 2.75rem 2rem;
+      max-width: 28rem;
+      width: 100%;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
     }
 
-    @keyframes wave {
-      0%, 100% { transform: rotate(0deg); }
-      15% { transform: rotate(20deg); }
-      30% { transform: rotate(-10deg); }
-      45% { transform: rotate(15deg); }
-      60% { transform: rotate(-5deg); }
-      75% { transform: rotate(10deg); }
+    .wave-mark {
+      color: var(--water);
+      margin: 0 auto 1.25rem;
+      display: block;
+      animation: drift 4s ease-in-out infinite alternate;
+    }
+
+    @keyframes drift {
+      from { transform: translateX(-4px); }
+      to   { transform: translateX(4px); }
     }
 
     h1 {
@@ -69,7 +74,7 @@
     }
 
     p.lede {
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       color: var(--muted);
       max-width: 28rem;
       line-height: 1.6;
@@ -90,25 +95,16 @@
       cursor: not-allowed;
       opacity: 0.6;
       box-shadow: 0 4px 14px rgba(14, 165, 233, 0.3);
-      transition: transform 0.15s ease;
     }
+
+    .cta svg { flex-shrink: 0; }
 
     .cta-note {
       display: block;
-      margin-top: 0.75rem;
+      margin-top: 0.85rem;
       font-size: 0.8rem;
       color: var(--muted);
       font-style: italic;
-    }
-
-    .card {
-      background: var(--soft);
-      border: 1px solid #e2e8f0;
-      border-radius: 1.25rem;
-      padding: 2.5rem 2rem;
-      max-width: 28rem;
-      width: 100%;
-      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
     }
 
     footer {
@@ -116,26 +112,33 @@
       font-size: 0.75rem;
       color: var(--muted);
     }
+
+    @media (prefers-reduced-motion: reduce) {
+      .wave-mark { animation: none; }
+    }
   </style>
 </head>
 <body>
+  {% from "_icons.html" import icon %}
 
   <main class="stage">
     <div class="card">
-      <div class="greet" aria-hidden="true">👋</div>
-      <h1>Welkom, sluiswachter!</h1>
+      {{ icon("wave-decoration", class="wave-mark") }}
+
+      <h1>Welkom, sluiswachter.</h1>
       <p class="lede">
-        Je bent ingelogd. Vanaf hier ga je straks foto's uploaden vanuit je toren — de bewoners kijken stiekem mee.
+        Bedankt dat je meedoet. Vanaf hier upload je straks foto's van het bouwproces, zodat de toekomstige bewoners zien hoe hun nieuwe buurt vorm krijgt.
       </p>
 
       <button class="cta" disabled>
-        📸 &nbsp; Foto's uploaden
+        {{ icon("camera", size=20, stroke=2) }}
+        Foto's uploaden
       </button>
       <small class="cta-note">Komt binnenkort — we bouwen nog</small>
     </div>
 
     <footer>
-      Bedankt dat je meedoet · Sluiskade
+      Sluiskade
     </footer>
   </main>
 

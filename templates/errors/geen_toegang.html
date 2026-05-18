@@ -41,10 +41,17 @@
       text-align: center;
     }
 
-    .icon {
-      font-size: 3.5rem;
-      margin-bottom: 1rem;
-      opacity: 0.85;
+    .icon-badge {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: white;
+      border: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.25rem;
+      color: var(--deep);
     }
 
     h1 {
@@ -76,7 +83,7 @@
     .option {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.9rem;
       padding: 1rem 1.25rem;
       background: white;
       border: 1px solid #e2e8f0;
@@ -94,7 +101,10 @@
     }
 
     .option-icon {
-      font-size: 1.4rem;
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      color: var(--water);
     }
 
     .option-text {
@@ -121,9 +131,12 @@
   </style>
 </head>
 <body>
+  {% from "_icons.html" import icon %}
 
   <main class="stage">
-    <div class="icon" aria-hidden="true">🔒</div>
+    <div class="icon-badge">
+      {{ icon("lock", size=28) }}
+    </div>
 
     <h1>Geen toegang</h1>
     <p>
@@ -132,7 +145,7 @@
 
     <div class="options">
       <a href="/portaal" class="option">
-        <span class="option-icon" aria-hidden="true">🏡</span>
+        {{ icon("home", class="option-icon") }}
         <span class="option-text">
           <span class="option-title">Toekomstige bewoner?</span>
           <span class="option-sub">Naar het bewonersportaal</span>
@@ -140,7 +153,7 @@
       </a>
 
       <a href="/" class="option">
-        <span class="option-icon" aria-hidden="true">←</span>
+        {{ icon("arrow-left", class="option-icon") }}
         <span class="option-text">
           <span class="option-title">Terug naar de startpagina</span>
           <span class="option-sub">Wat is Sluiskade?</span>
@@ -148,7 +161,7 @@
       </a>
 
       <a href="mailto:hello@teunard.com?subject=Toegang%20Sluiskade%20sluis" class="option">
-        <span class="option-icon" aria-hidden="true">✉️</span>
+        {{ icon("mail", class="option-icon") }}
         <span class="option-text">
           <span class="option-title">Per ongeluk hier beland?</span>
           <span class="option-sub">Mail Teunard</span>
@@ -157,7 +170,7 @@
     </div>
 
     <footer>
-      Sluiskade · privé project
+      Sluiskade
     </footer>
   </main>
 

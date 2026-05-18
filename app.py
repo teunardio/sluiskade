@@ -68,13 +68,13 @@ def sluis_entry():
     Three paths through this route:
 
     1.  Fresh QR scan: ?t=<token> is present and valid
-        → set shift cookie, redirect to /sluis (no token in URL anymore)
+        -> set shift cookie, redirect to /sluis (no token in URL anymore)
 
     2.  Returning sluiswachter within their shift: valid cookie present
-        → show the welcome page
+        -> show the welcome page
 
     3.  Anyone else (no token, expired cookie, bad token):
-        → 403 "geen toegang"
+        -> 403 "geen toegang"
     """
     incoming_token = request.args.get("t")
 

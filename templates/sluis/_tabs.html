@@ -1,0 +1,43 @@
+{#
+   Sluiswachter tab-strip — segmented control between upload + gallery.
+   Usage:
+       {% from "sluis/_tabs.html" import tabs %}
+       {{ tabs(current='upload') }}      OR    {{ tabs(current='gallery') }}
+#}
+
+{% macro tabs(current) %}
+<nav class="sluis-tabs" aria-label="Navigatie sluiswachter">
+  <a class="sluis-tab {% if current == 'upload' %}active{% endif %}"
+     href="{{ url_for('sluis_upload') }}">Uploaden</a>
+  <a class="sluis-tab {% if current == 'gallery' %}active{% endif %}"
+     href="{{ url_for('sluis_gallery') }}">Galerij</a>
+</nav>
+
+<style>
+  .sluis-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    margin: 0 auto 1.75rem;
+    width: fit-content;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  }
+  .sluis-tab {
+    padding: 0.5rem 1.25rem;
+    border-radius: 999px;
+    color: #64748b;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .sluis-tab:hover { color: #0c4a6e; }
+  .sluis-tab.active {
+    background: #0ea5e9;
+    color: white;
+  }
+</style>
+{% endmacro %}

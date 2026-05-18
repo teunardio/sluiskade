@@ -216,6 +216,7 @@
 </head>
 <body>
   {% from "_icons.html" import icon %}
+  {% from "sluis/_tabs.html" import tabs %}
 
   <main class="stage">
     <div class="container">
@@ -224,6 +225,8 @@
         <h1>Welkom, sluiswachter.</h1>
         <p>Bedankt dat je meedoet. Upload hieronder de foto's die je vanuit je toren maakt — de toekomstige bewoners zien zo hun nieuwe buurt vorm krijgen.</p>
       </header>
+
+      {{ tabs(current='upload') }}
 
       {% if error %}
       <div class="alert" role="alert">

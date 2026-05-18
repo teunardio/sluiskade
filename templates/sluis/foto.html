@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Foto — Sluiskade</title>
+  {% include "_head_meta.html" %}
+
+  <style>
+    :root {
+      --ink:    #0f172a;
+      --muted:  #94a3b8;
+      --water:  #0ea5e9;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #f1f5f9;
+      background: var(--ink);
+    }
+
+    .stage {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: env(safe-area-inset-top, 1rem) 1rem env(safe-area-inset-bottom, 1rem);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0 1rem;
+    }
+
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 0.9rem 0.5rem 0.7rem;
+      background: rgba(255,255,255,0.08);
+      color: white;
+      text-decoration: none;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: background 0.15s ease;
+    }
+    .back:hover { background: rgba(255,255,255,0.16); }
+
+    .photo-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+    }
+
+    .photo-wrap img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 0.75rem;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+    }
+
+    .meta {
+      padding-top: 1rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  {% from "_icons.html" import icon %}
+
+  <main class="stage">
+    <div class="topbar">
+      <a class="back" href="{{ url_for('sluis_gallery') }}">
+        {{ icon("arrow-left", size=18, stroke=2.25) }}
+        Galerij
+      </a>
+    </div>
+
+    <div class="photo-wrap">
+      <img src="{{ url_for('serve_photo', photo_id=photo.id) }}" alt="" />
+    </div>
+
+    <div class="meta">
+      Geüpload op {{ photo.uploaded_at[:16].replace('T', ' ') }}
+      {% if photo.width and photo.height %}
+        · {{ photo.width }}×{{ photo.height }} px
+      {% endif %}
+    </div>
+  </main>
+
+</body>
+</html>

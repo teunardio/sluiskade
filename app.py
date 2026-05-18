@@ -154,6 +154,47 @@ def _handle_upload():
     return redirect(target)
 
 
+@app.route("/sluis/gallery")
+@require_sluis_session
+def sluis_gallery():
+    """Show every uploaded photo (newest first) in a grid."""
+    photos = db.list_photos(limit=200)
+    return render_template(
+        "sluis/gallery.html",
+        photos=photos,
+        total_photos=db.count_photos(),
+    )
+
+
+@app.route("/sluis/foto/<int:photo_id>")
+@require_sluis_session
+def sluis_view_photo(photo_id: int):
+    """Full-screen preview of one photo."""
+    photo = db.get_photo(photo_id)
+    if not photo or photo.get("deleted_at"):
+        abort(404)
+    return render_template("sluis/foto.html", photo=photo)
+
+
+@app.route("/sluis/foto/<int:photo_id>/delete", methods=["POST"])
+@require_sluis_session
+def sluis_delete_photo(photo_id: int):
+    """
+    Soft-delete a photo. Files stay on disk; the row gets deleted_at set
+    and disappears from every public view. Admin trash recovery comes in
+    Sprint 3.
+
+    Responds with JSON for AJAX callers, redirects for plain form posts.
+    """
+    deleted = db.soft_delete_photo(photo_id, deleted_by="sluis")
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+    if is_ajax:
+        return {"ok": deleted, "id": photo_id}, (200 if deleted else 404)
+
+    return redirect(url_for("sluis_gallery"))
+
+
 @app.route("/sluis/bedankt")
 @require_sluis_session
 def sluis_bedankt():

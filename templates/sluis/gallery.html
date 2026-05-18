@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Galerij — Sluiskade</title>
+  {% include "_head_meta.html" %}
+
+  <style>
+    :root {
+      --deep:  #0c4a6e;
+      --water: #0ea5e9;
+      --foam:  #e0f2fe;
+      --ink:   #0f172a;
+      --paper: #f8fafc;
+      --muted: #64748b;
+      --danger: #dc2626;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, var(--foam) 0%, var(--paper) 60%, #ffffff 100%);
+    }
+
+    .stage {
+      min-height: 100vh;
+      padding: 2rem 1rem 3rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 56rem;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      font-size: clamp(1.75rem, 5vw, 2.25rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--deep);
+      margin: 0 0 0.25rem;
+      line-height: 1.1;
+    }
+
+    header p {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .counter strong {
+      color: var(--deep);
+      font-weight: 600;
+    }
+
+    /* --- Empty state --- */
+    .empty {
+      text-align: center;
+      padding: 3rem 1.5rem;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      color: var(--muted);
+      max-width: 28rem;
+      margin: 0 auto;
+    }
+    .empty p { margin: 0; line-height: 1.5; }
+
+    /* --- Grid --- */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px;
+    }
+
+    .thumb {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 0.6rem;
+      overflow: hidden;
+      background: var(--paper);
+      border: 1px solid #e2e8f0;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+    }
+
+    .thumb:hover { transform: translateY(-2px); }
+
+    .thumb a.view {
+      display: block;
+      width: 100%;
+      height: 100%;
+      text-decoration: none;
+    }
+
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* --- Trash button (top-right corner overlay) --- */
+    .trash-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 32px;
+      height: 32px;
+      background: rgba(15, 23, 42, 0.6);
+      color: white;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+      backdrop-filter: blur(4px);
+      transition: background 0.15s ease, transform 0.1s ease;
+      z-index: 2;
+    }
+    .trash-btn:hover { background: var(--danger); transform: scale(1.05); }
+    .trash-btn:active { transform: scale(0.95); }
+
+    /* On touch devices keep the trash button visible (no hover) */
+    @media (hover: none) {
+      .trash-btn { background: rgba(15, 23, 42, 0.55); }
+    }
+
+    /* --- Inline confirm overlay (covers the thumb while asking) --- */
+    .confirm-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(220, 38, 38, 0.94);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      gap: 0.6rem;
+      text-align: center;
+      padding: 0.75rem;
+      z-index: 3;
+      animation: fade-in 0.15s ease;
+    }
+    .thumb.confirming .confirm-overlay { display: flex; }
+    .thumb.confirming img { filter: brightness(0.5) blur(1px); }
+    .thumb.confirming .trash-btn { display: none; }
+
+    .confirm-question {
+      font-size: 0.85rem;
+      font-weight: 500;
+      line-height: 1.3;
+    }
+
+    .confirm-buttons {
+      display: flex;
+      gap: 6px;
+    }
+
+    .confirm-btn {
+      padding: 0.4rem 0.85rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-family: inherit;
+    }
+    .confirm-yes { background: white; color: var(--danger); }
+    .confirm-no  { background: rgba(255,255,255,0.2); color: white; }
+    .confirm-yes:disabled { opacity: 0.5; cursor: wait; }
+
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* --- Removing animation --- */
+    .thumb.removing {
+      opacity: 0;
+      transform: scale(0.85);
+      pointer-events: none;
+    }
+
+    .note {
+      margin-top: 2rem;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  {% from "_icons.html" import icon %}
+  {% from "sluis/_tabs.html" import tabs %}
+
+  <main class="stage">
+    <div class="container">
+      <header>
+        <h1>Galerij</h1>
+        <p class="counter"><strong id="counter">{{ total_photos }}</strong> {% if total_photos == 1 %}foto{% else %}foto's{% endif %} tot nu toe</p>
+      </header>
+
+      {{ tabs(current='gallery') }}
+
+      {% if photos %}
+        <div class="grid" id="grid">
+          {% for photo in photos %}
+            <div class="thumb" data-id="{{ photo.id }}">
+              <a class="view" href="{{ url_for('sluis_view_photo', photo_id=photo.id) }}">
+                <img src="{{ url_for('serve_thumb', photo_id=photo.id) }}"
+                     alt="" loading="lazy" />
+              </a>
+              <button type="button" class="trash-btn" aria-label="Foto weghalen">
+                {{ icon("trash", size=16, stroke=2) }}
+              </button>
+              <div class="confirm-overlay">
+                <div class="confirm-question">Weghalen?<br /><small>Teunard kan 'm 30 dagen herstellen.</small></div>
+                <div class="confirm-buttons">
+                  <button type="button" class="confirm-btn confirm-yes">Ja</button>
+                  <button type="button" class="confirm-btn confirm-no">Nee</button>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty">
+          <p>Nog geen foto's. Ga naar het tabblad <strong>Uploaden</strong> om de eerste te schieten.</p>
+        </div>
+      {% endif %}
+
+      <p class="note">Tik op een foto om hem groter te zien.</p>
+    </div>
+  </main>
+
+  <script>
+    (function() {
+      const counter = document.getElementById('counter');
+
+      function cancelAllConfirms() {
+        document.querySelectorAll('.thumb.confirming').forEach(t => {
+          t.classList.remove('confirming');
+        });
+      }
+
+      // Open confirm overlay when trash button clicked
+      document.querySelectorAll('.trash-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          cancelAllConfirms();
+          btn.closest('.thumb').classList.add('confirming');
+        });
+      });
+
+      // Cancel confirm
+      document.querySelectorAll('.confirm-no').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          btn.closest('.thumb').classList.remove('confirming');
+        });
+      });
+
+      // Confirm delete
+      document.querySelectorAll('.confirm-yes').forEach(btn => {
+        btn.addEventListener('click', async e => {
+          e.preventDefault();
+          e.stopPropagation();
+          const thumb = btn.closest('.thumb');
+          const id = thumb.dataset.id;
+          btn.disabled = true;
+
+          try {
+            const resp = await fetch('/sluis/foto/' + id + '/delete', {
+              method: 'POST',
+              headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const data = await resp.json();
+            if (resp.ok && data.ok) {
+              thumb.classList.add('removing');
+              setTimeout(() => {
+                thumb.remove();
+                // Decrement the counter
+                const n = parseInt(counter.textContent, 10) - 1;
+                counter.textContent = Math.max(0, n);
+                // Show empty state if grid is now empty
+                if (!document.querySelector('.thumb')) {
+                  window.location.reload();
+                }
+              }, 280);
+            } else {
+              btn.disabled = false;
+              alert('Kon de foto niet verwijderen. Probeer opnieuw.');
+            }
+          } catch (err) {
+            btn.disabled = false;
+            alert('Geen verbinding. Probeer opnieuw.');
+          }
+        });
+      });
+
+      // Tap outside any confirming thumb to cancel
+      document.addEventListener('click', e => {
+        if (!e.target.closest('.thumb.confirming')) {
+          cancelAllConfirms();
+        }
+      });
+    })();
+  </script>
+
+</body>
+</html>

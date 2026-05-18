@@ -846,6 +846,13 @@ def admin_approve_request(request_id: int):
     db.mark_access_request_handled(
         request_id, new_status="approved", handled_by="admin"
     )
+    # Welkomst-mail naar de aanvrager met loginlink. Faalt gracefully:
+    # als de mail niet de deur uitkomt blijft de toegang gewoon staan,
+    # admin ziet 't dan in de logs.
+    try:
+        mail.send_access_approved_email(req)
+    except Exception:  # noqa: BLE001
+        app.logger.exception("Welkomst-mail mislukt voor %s", req["email"])
     app.logger.info("Admin keurde aanvraag goed voor %s", req["email"])
     return redirect(url_for("admin_aanvragen"))
 

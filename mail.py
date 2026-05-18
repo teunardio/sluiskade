@@ -141,6 +141,53 @@ def send_admin_otp_email(code: str) -> bool:
     return _send(ADMIN_EMAIL, subject, html)
 
 
+def send_access_approved_email(req: dict) -> bool:
+    """Welkom-mail naar de aanvrager wanneer admin de aanvraag goedkeurt.
+
+    Bevat een grote CTA naar de loginpagina zodat 'ie direct kan inloggen,
+    en een korte uitleg van hoe de magic-link flow werkt."""
+    voornaam = (req.get("voornaam") or "").strip()
+    aanhef = f"Hoi {voornaam}" if voornaam else "Hoi"
+    login_url = f"{PUBLIC_BASE_URL}/portaal/login"
+    subject = "Je hebt toegang tot Sluiskade"
+    html = f"""<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    {_BASE_STYLE}
+    .cta-btn {{ display: inline-block; padding: 12px 22px; background: #0ea5e9;
+              color: white !important; text-decoration: none; border-radius: 999px;
+              font-weight: 600; font-size: 15px; margin-top: 8px;
+              box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25); }}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="brand">Sluiskade</div>
+      <h1>Welkom in het bewonersportaal</h1>
+      <p>{aanhef},</p>
+      <p>Je toegangsaanvraag is goedgekeurd. Je kunt vanaf nu inloggen op het bewonersportaal en meekijken hoe de bouw vordert, foto's plaatsen, hartjes uitdelen en de tijdlijn doorbladeren.</p>
+
+      <p style="text-align: center; margin: 24px 0 8px;">
+        <a href="{login_url}" class="cta-btn">Inloggen</a>
+      </p>
+
+      <p style="margin-top: 24px;">Zo werkt het:</p>
+      <p style="margin: 6px 0;">1. Klik op de knop hierboven of ga naar <a href="{login_url}" style="color: #0ea5e9;">sluiskade.com/portaal/login</a></p>
+      <p style="margin: 6px 0;">2. Vul dit e-mailadres in: <b>{req.get('email', '')}</b></p>
+      <p style="margin: 6px 0;">3. Je krijgt een eenmalige code in je inbox, die vul je in</p>
+
+      <p style="color: #64748b; font-size: 13px; margin-top: 24px;">Geen wachtwoord nodig: elke keer dat je inlogt krijg je een verse code per mail. Heb je vragen, beantwoord deze mail dan komt 'ie bij de beheerder.</p>
+    </div>
+    <div class="footer">Sluiskade &middot; <a href="{PUBLIC_BASE_URL}" style="color: #0ea5e9;">sluiskade.com</a></div>
+  </div>
+</body>
+</html>"""
+    return _send(req.get("email", ""), subject, html)
+
+
 def send_access_request_notification(req: dict) -> bool:
     """Notify ADMIN_EMAIL of a new toegangsaanvraag."""
     subject = f"Nieuwe toegangsaanvraag Sluiskade: {req.get('email')}"

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0c4a6e" />
+  <title>Geen toegang — Sluiskade</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --deep:  #0c4a6e;
+      --water: #0ea5e9;
+      --foam:  #e0f2fe;
+      --ink:   #0f172a;
+      --paper: #f8fafc;
+      --muted: #64748b;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, var(--foam) 0%, var(--paper) 60%, #ffffff 100%);
+    }
+
+    .stage {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem;
+      text-align: center;
+    }
+
+    .icon {
+      font-size: 3.5rem;
+      margin-bottom: 1rem;
+      opacity: 0.85;
+    }
+
+    h1 {
+      font-size: clamp(1.75rem, 5vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--deep);
+      margin: 0 0 1rem;
+      line-height: 1.2;
+    }
+
+    p {
+      font-size: 1rem;
+      color: var(--muted);
+      max-width: 32rem;
+      line-height: 1.6;
+      margin: 0 auto 1rem;
+    }
+
+    .options {
+      margin-top: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      width: 100%;
+      max-width: 22rem;
+    }
+
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 1.25rem;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.75rem;
+      color: var(--ink);
+      text-decoration: none;
+      transition: all 0.15s ease;
+      text-align: left;
+    }
+
+    .option:hover {
+      border-color: var(--water);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.08);
+    }
+
+    .option-icon {
+      font-size: 1.4rem;
+    }
+
+    .option-text {
+      flex: 1;
+    }
+
+    .option-title {
+      font-weight: 500;
+      color: var(--deep);
+      display: block;
+      margin-bottom: 0.1rem;
+    }
+
+    .option-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    footer {
+      margin-top: 3rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <main class="stage">
+    <div class="icon" aria-hidden="true">🔒</div>
+
+    <h1>Geen toegang</h1>
+    <p>
+      Deze pagina is voor de sluiswachters van de sluis. Je hebt een geldige QR-code nodig om hier te komen.
+    </p>
+
+    <div class="options">
+      <a href="/portaal" class="option">
+        <span class="option-icon" aria-hidden="true">🏡</span>
+        <span class="option-text">
+          <span class="option-title">Toekomstige bewoner?</span>
+          <span class="option-sub">Naar het bewonersportaal</span>
+        </span>
+      </a>
+
+      <a href="/" class="option">
+        <span class="option-icon" aria-hidden="true">←</span>
+        <span class="option-text">
+          <span class="option-title">Terug naar de startpagina</span>
+          <span class="option-sub">Wat is Sluiskade?</span>
+        </span>
+      </a>
+
+      <a href="mailto:hello@teunard.com?subject=Toegang%20Sluiskade%20sluis" class="option">
+        <span class="option-icon" aria-hidden="true">✉️</span>
+        <span class="option-text">
+          <span class="option-title">Per ongeluk hier beland?</span>
+          <span class="option-sub">Mail Teunard</span>
+        </span>
+      </a>
+    </div>
+
+    <footer>
+      Sluiskade · privé project
+    </footer>
+  </main>
+
+</body>
+</html>

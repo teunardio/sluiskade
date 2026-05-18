@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0c4a6e" />
+  <title>Welkom, sluiswachter — Sluiskade</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --deep:  #0c4a6e;
+      --water: #0ea5e9;
+      --foam:  #e0f2fe;
+      --ink:   #0f172a;
+      --paper: #f8fafc;
+      --muted: #64748b;
+      --soft:  #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, var(--foam) 0%, var(--paper) 60%, #ffffff 100%);
+    }
+
+    .stage {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem 6rem;
+      text-align: center;
+    }
+
+    .greet {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+      animation: wave 1.6s ease-in-out;
+      transform-origin: 70% 70%;
+      display: inline-block;
+    }
+
+    @keyframes wave {
+      0%, 100% { transform: rotate(0deg); }
+      15% { transform: rotate(20deg); }
+      30% { transform: rotate(-10deg); }
+      45% { transform: rotate(15deg); }
+      60% { transform: rotate(-5deg); }
+      75% { transform: rotate(10deg); }
+    }
+
+    h1 {
+      font-size: clamp(2rem, 6vw, 3.25rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--deep);
+      margin: 0 0 1rem;
+      line-height: 1.1;
+    }
+
+    p.lede {
+      font-size: 1.1rem;
+      color: var(--muted);
+      max-width: 28rem;
+      line-height: 1.6;
+      margin: 0 auto 2.5rem;
+    }
+
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 1rem 1.75rem;
+      background: var(--water);
+      color: white;
+      font-weight: 600;
+      font-size: 1.05rem;
+      border-radius: 999px;
+      border: none;
+      cursor: not-allowed;
+      opacity: 0.6;
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.3);
+      transition: transform 0.15s ease;
+    }
+
+    .cta-note {
+      display: block;
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .card {
+      background: var(--soft);
+      border: 1px solid #e2e8f0;
+      border-radius: 1.25rem;
+      padding: 2.5rem 2rem;
+      max-width: 28rem;
+      width: 100%;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    }
+
+    footer {
+      margin-top: 3rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <main class="stage">
+    <div class="card">
+      <div class="greet" aria-hidden="true">👋</div>
+      <h1>Welkom, sluiswachter!</h1>
+      <p class="lede">
+        Je bent ingelogd. Vanaf hier ga je straks foto's uploaden vanuit je toren — de bewoners kijken stiekem mee.
+      </p>
+
+      <button class="cta" disabled>
+        📸 &nbsp; Foto's uploaden
+      </button>
+      <small class="cta-note">Komt binnenkort — we bouwen nog</small>
+    </div>
+
+    <footer>
+      Bedankt dat je meedoet · Sluiskade
+    </footer>
+  </main>
+
+</body>
+</html>

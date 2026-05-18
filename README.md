@@ -3,7 +3,7 @@
 Een kleine Flask-app voor het delen van bouwfoto's van een woningbouwproject aan de Sluiskade. Sluiswachters van de naastgelegen sluis schieten foto's vanuit het sluiswachtershuis en uploaden die via een QR-code; toekomstige bewoners loggen in met een magic link en zien hoe hun huis vorm krijgt.
 
 **Live op:** [sluiskade.com](https://sluiskade.com)
-**Stack:** Flask · SQLite · Pillow · Resend · Docker · Coolify
+**Stack:** Flask · SQLite · Pillow · Resend · APScheduler · Cloudflare Turnstile · Docker · Coolify
 
 ---
 
@@ -16,9 +16,19 @@ Eén Flask-app, één SQLite-database, één foto-volume, met vier ingangen:
 | `/` | Iedereen | Publieke community one-pager |
 | `/portaal` | Toekomstige bewoners | Magic link (e-mail OTP via Resend) |
 | `/sluis` | Sluiswachters van de sluis ernaast | HMAC-getekend token in QR-code |
-| `/admin` | Beheerder | Magic link + wachtwoord (2FA) |
+| `/admin` | Beheerder | Magic link + wachtwoord (2FA), via dezelfde /portaal/login flow |
 
 Gehost op de droog.cloud stack (Contabo VPS + Coolify + Traefik + Let's Encrypt). Foto's worden gecomprimeerd, EXIF-GPS gestript, op een persistent Docker-volume opgeslagen en meegenomen in de nightly backup.
+
+## Features
+
+**Bewoners-portaal:** dashboard met stats, galerij, dag-gegroepeerde tijdlijn, autoplay timelapse met ken-burns animatie, hartjes, captions bij upload, downloads (per foto of als ZIP-bundle), random "verras me" knop, en eigen uploads hard-deleten.
+
+**Sluiswachters:** QR-code in het sluiswachtershuis, multi-file upload met EXIF-strip en automatische thumbnails, eigen galerij en soft-delete.
+
+**Admin:** lichte UI in dezelfde stijl als bewoners-portaal, dashboard met live stats (uploads/week chart, top-uploaders, opslagverbruik), 1-klik goedkeuren/weigeren van toegangsaanvragen (met automatische welkomst-mail), bewoner-beheer en prullenbak voor sluis-foto's.
+
+**Achtergrond:** APScheduler-job ruimt elke nacht om 03:00 UTC soft-deletes ouder dan 30 dagen op (DB + bestanden van disk). Cloudflare Turnstile beschermt het publieke aanvraagformulier tegen bots.
 
 ## Waarom is dit publiek?
 

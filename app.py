@@ -701,8 +701,8 @@ def sluis_view_photo(photo_id: int):
 def sluis_delete_photo(photo_id: int):
     """
     Soft-delete a photo. Files stay on disk; the row gets deleted_at set
-    and disappears from every public view. Admin trash recovery comes in
-    Sprint 3.
+    and disappears from every public view. Admin kan herstellen of
+    definitief verwijderen via /admin/prullenbak.
 
     Responds with JSON for AJAX callers, redirects for plain form posts.
     """
@@ -793,7 +793,7 @@ def serve_photo(photo_id: int):
 
 
 # ---------------------------------------------------------------------------
-# Admin pages (sprint 3)
+# Admin pages
 # Login gaat via /portaal/login (unified flow), zie hierboven. Deze routes
 # zijn alleen de admin-specifieke schermen, allemaal protected door
 # require_admin decorator.

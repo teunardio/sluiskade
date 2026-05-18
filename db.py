@@ -11,9 +11,9 @@ Sessions are stateless (signed cookies via itsdangerous), so no table
 for those.
 
 Soft-delete is built in for photos: deleted_at != NULL means the photo
-is hidden from every public view but still recoverable from the admin
-trash. APScheduler will permanently purge entries older than 30 days
-(Sprint 3 admin work).
+is hidden from every public view but still recoverable via /admin/prullenbak.
+APScheduler purges entries older than PURGE_AFTER_DAYS (default 30)
+elke nacht om 03:00 UTC.
 """
 from __future__ import annotations
 
@@ -546,7 +546,7 @@ def mark_bewoner_otp_used(otp_id: int) -> None:
 
 def cleanup_expired_otps() -> int:
     """Delete OTPs that are expired or used. Returns rows deleted.
-    Called periodically by APScheduler (Sprint 3 housekeeping)."""
+    Called periodically by APScheduler (zie scheduler.py)."""
     with get_db() as conn:
         cur = conn.execute(
             "DELETE FROM bewoner_otps "
@@ -556,7 +556,7 @@ def cleanup_expired_otps() -> int:
 
 
 # ---------------------------------------------------------------------------
-# Admin helpers (Sprint 3)
+# Admin helpers
 # ---------------------------------------------------------------------------
 
 def list_soft_deleted_photos(*, limit: int = 200) -> list[dict]:

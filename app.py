@@ -292,18 +292,34 @@ def portaal_upload():
         email=email,
         total_photos=db.count_photos(),
         error=request.args.get("error"),
+        max_files=photo_service.MAX_FILES_PER_UPLOAD,
+        max_file_bytes=photo_service.MAX_UPLOAD_BYTES,
+        max_total_bytes=app.config["MAX_CONTENT_LENGTH"],
     )
 
 
 def _handle_bewoner_upload(email: str):
     """Same pipeline as sluiswachter upload, tagged with source=bewoner.
-    A single optional caption applies to every file in the batch."""
+    A single optional caption applies to every file in the batch.
+    Returnt JSON voor AJAX-calls, redirect voor plain form posts."""
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
     files = [f for f in request.files.getlist("photos") if f and f.filename]
+
     if not files:
-        return redirect(url_for("portaal_upload", error="Geen foto's geselecteerd."))
+        return _upload_error_response(
+            "Geen foto's geselecteerd.", is_ajax,
+            redirect_url=url_for("portaal_upload"),
+        )
+
+    if len(files) > photo_service.MAX_FILES_PER_UPLOAD:
+        return _upload_error_response(
+            f"Maximaal {photo_service.MAX_FILES_PER_UPLOAD} foto's tegelijk. "
+            f"Je probeerde er {len(files)} te uploaden, splits het op in batches.",
+            is_ajax,
+            redirect_url=url_for("portaal_upload"),
+        )
 
     caption_raw = (request.form.get("caption") or "").strip()
-    # Cap at 240 chars to keep gallery rendering clean
     caption = caption_raw[:240] if caption_raw else None
 
     saved_ids: list[int] = []
@@ -332,10 +348,26 @@ def _handle_bewoner_upload(email: str):
 
     if not saved_ids:
         first_error = errors[0][1] if errors else "Onbekende fout."
-        return redirect(url_for("portaal_upload", error=first_error))
+        return _upload_error_response(
+            first_error, is_ajax, redirect_url=url_for("portaal_upload"),
+        )
 
-    # Land back on the gallery so they see their photo at the top
+    if is_ajax:
+        return {
+            "ok": True,
+            "saved": len(saved_ids),
+            "failed": len(errors),
+            "errors": [{"file": fn, "msg": msg} for fn, msg in errors],
+            "redirect": url_for("portaal_gallery"),
+        }, 200
     return redirect(url_for("portaal_gallery"))
+
+
+def _upload_error_response(message: str, is_ajax: bool, *, redirect_url: str):
+    """Geef de juiste error-response: JSON voor XHR, redirect voor form."""
+    if is_ajax:
+        return {"ok": False, "error": message}, 400
+    return redirect(f"{redirect_url}?error={message}")
 
 
 def _is_bewoner_own_photo(photo: dict, email: str) -> bool:
@@ -645,14 +677,31 @@ def sluis_upload():
         total_photos=db.count_photos(),
         goal_total=GOAL_TOTAL,
         error=request.args.get("error"),
+        max_files=photo_service.MAX_FILES_PER_UPLOAD,
+        max_file_bytes=photo_service.MAX_UPLOAD_BYTES,
+        max_total_bytes=app.config["MAX_CONTENT_LENGTH"],
     )
 
 
 def _handle_upload():
-    """Process a multi-file POST. Saves what it can; reports the rest."""
+    """Process a multi-file POST. Saves what it can; reports the rest.
+    Returnt JSON voor AJAX-calls, redirect voor plain form posts."""
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
     files = [f for f in request.files.getlist("photos") if f and f.filename]
+
     if not files:
-        return redirect(url_for("sluis_upload", error="Geen foto's geselecteerd."))
+        return _upload_error_response(
+            "Geen foto's geselecteerd.", is_ajax,
+            redirect_url=url_for("sluis_upload"),
+        )
+
+    if len(files) > photo_service.MAX_FILES_PER_UPLOAD:
+        return _upload_error_response(
+            f"Maximaal {photo_service.MAX_FILES_PER_UPLOAD} foto's tegelijk. "
+            f"Je probeerde er {len(files)} te uploaden, splits het op in batches.",
+            is_ajax,
+            redirect_url=url_for("sluis_upload"),
+        )
 
     saved_ids: list[int] = []
     errors: list[tuple[str, str]] = []
@@ -672,19 +721,30 @@ def _handle_upload():
         except PhotoError as exc:
             errors.append((f.filename, str(exc)))
             app.logger.warning("Upload failed for %s: %s", f.filename, exc)
-        except Exception as exc:  # noqa: BLE001 - last-resort catch
-            errors.append((f.filename, "Onverwachte fout · de beheerder kijkt ernaar."))
+        except Exception:  # noqa: BLE001
+            errors.append((f.filename, "Onverwachte fout, de beheerder kijkt ernaar."))
             app.logger.exception("Unexpected upload error for %s", f.filename)
 
     if not saved_ids:
         first_error = errors[0][1] if errors else "Onbekende fout."
-        return redirect(url_for("sluis_upload", error=first_error))
+        return _upload_error_response(
+            first_error, is_ajax, redirect_url=url_for("sluis_upload"),
+        )
 
     ok_param = ",".join(str(i) for i in saved_ids[:10])  # cap for URL length
-    target = url_for("sluis_bedankt", ok=ok_param)
+    redirect_target = url_for("sluis_bedankt", ok=ok_param)
     if errors:
-        target += f"&fail={len(errors)}"
-    return redirect(target)
+        redirect_target += f"&fail={len(errors)}"
+
+    if is_ajax:
+        return {
+            "ok": True,
+            "saved": len(saved_ids),
+            "failed": len(errors),
+            "errors": [{"file": fn, "msg": msg} for fn, msg in errors],
+            "redirect": redirect_target,
+        }, 200
+    return redirect(redirect_target)
 
 
 @app.route("/sluis/gallery")
@@ -1001,11 +1061,16 @@ def forbidden(_err):
 
 @app.errorhandler(413)
 def too_large(_err):
-    """Triggered when the total request body exceeds MAX_CONTENT_LENGTH."""
-    return redirect(url_for(
-        "sluis_upload",
-        error="De foto's samen zijn te groot. Probeer er minder tegelijk.",
-    ))
+    """Triggered when the total request body exceeds MAX_CONTENT_LENGTH.
+    Return JSON voor AJAX zodat de progress-UI 'm netjes kan tonen."""
+    msg = "De foto's samen zijn te groot. Probeer er minder tegelijk of kleinere."
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return {"ok": False, "error": msg}, 413
+    # Pak juiste redirect-target gebaseerd op waar 'ie vandaan kwam
+    referrer = request.referrer or ""
+    if "/portaal/" in referrer:
+        return redirect(url_for("portaal_upload", error=msg))
+    return redirect(url_for("sluis_upload", error=msg))
 
 
 # ---------------------------------------------------------------------------

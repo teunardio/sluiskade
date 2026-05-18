@@ -112,18 +112,91 @@
       position: absolute; inset: 0; opacity: 0; cursor: pointer;
     }
 
-    .selection-info {
+    /* File list - previews na selectie */
+    .upload-list {
+      display: none;
+      margin-top: 1rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.6rem;
+      overflow: hidden;
+    }
+    .upload-list.visible { display: block; }
+    .upload-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.85rem;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 0.88rem;
+    }
+    .upload-row:last-child { border-bottom: none; }
+    .upload-row-name {
+      flex: 1;
+      min-width: 0;
+      color: var(--ink);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .upload-row-size {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+    .upload-row.over-limit {
+      background: #fef3c7;
+    }
+    .upload-row.over-limit .upload-row-size {
+      color: #b45309;
+      font-weight: 600;
+    }
+
+    /* Error box voor client-side validatiefouten en server-fouten */
+    .upload-error {
       display: none;
       margin-top: 1rem;
       padding: 0.75rem 1rem;
-      background: #ecfdff;
-      border: 1px solid #bae6fd;
-      border-radius: 0.5rem;
-      font-size: 0.9rem;
-      color: var(--deep);
-      text-align: center;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #b91c1c;
+      border-radius: 0.6rem;
+      font-size: 0.88rem;
+      line-height: 1.5;
     }
-    .selection-info.visible { display: block; }
+    .upload-error.visible { display: block; }
+
+    /* Progress bar tijdens upload */
+    .upload-progress {
+      display: none;
+      margin-top: 1rem;
+    }
+    .upload-progress.visible { display: block; }
+    .upload-progress-track {
+      width: 100%;
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .upload-progress-bar {
+      height: 100%;
+      background: linear-gradient(to right, var(--water), #38bdf8);
+      width: 0%;
+      transition: width 0.2s ease;
+    }
+    .upload-progress-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.4rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .upload-progress-pct {
+      font-variant-numeric: tabular-nums;
+      color: var(--deep);
+      font-weight: 600;
+    }
 
     .caption-field {
       margin-top: 1.25rem;
@@ -223,15 +296,34 @@
     </div>
     {% endif %}
 
-    <form id="uploadForm" method="post" action="{{ url_for('portaal_upload') }}" enctype="multipart/form-data">
+    <form id="uploadForm"
+          class="upload-widget"
+          method="post"
+          action="{{ url_for('portaal_upload') }}"
+          enctype="multipart/form-data"
+          data-max-files="{{ max_files }}"
+          data-max-file-bytes="{{ max_file_bytes }}"
+          data-max-total-bytes="{{ max_total_bytes }}">
       <label class="dropzone" for="photoInput">
         <div class="icon-wrap">{{ icon("upload-cloud", size=28, stroke=2) }}</div>
         <div class="dropzone-label">Tik om foto's te kiezen</div>
-        <div class="dropzone-sub">uit camera of galerij, meerdere tegelijk mag</div>
+        <div class="dropzone-sub">uit camera of galerij, max {{ max_files }} tegelijk &middot; {{ (max_file_bytes // 1048576) }} MB per foto</div>
         <input id="photoInput" type="file" name="photos" accept="image/*" multiple required />
       </label>
 
-      <div id="selectionInfo" class="selection-info"></div>
+      <div class="upload-list" data-upload-list></div>
+
+      <div class="upload-error" data-upload-error role="alert"></div>
+
+      <div class="upload-progress" data-upload-progress>
+        <div class="upload-progress-track">
+          <div class="upload-progress-bar" data-upload-progress-bar></div>
+        </div>
+        <div class="upload-progress-meta">
+          <span>Bezig met uploaden</span>
+          <span class="upload-progress-pct" data-upload-progress-label>0%</span>
+        </div>
+      </div>
 
       <div class="caption-field">
         <label for="caption">Korte beschrijving <span>(optioneel, geldt voor alle foto's in deze upload)</span></label>
@@ -241,46 +333,22 @@
 
       <button id="submitBtn" class="submit" type="submit">
         {{ icon("camera", size=20, stroke=2) }}
-        <span id="submitText">Uploaden</span>
+        <span data-upload-submit-text>Uploaden</span>
       </button>
     </form>
   </main>
 
+  <script src="{{ url_for('static', filename='upload-widget.js') }}"></script>
   <script>
+    // Caption counter blijft inline want is upload-widget-onafhankelijk
     (function() {
-      const input = document.getElementById('photoInput');
-      const info = document.getElementById('selectionInfo');
-      const form = document.getElementById('uploadForm');
-      const btn = document.getElementById('submitBtn');
-      const btnText = document.getElementById('submitText');
-      const btnIcon = btn.querySelector('svg');
-
-      input.addEventListener('change', () => {
-        const n = input.files.length;
-        if (n === 0) {
-          info.classList.remove('visible');
-          info.textContent = '';
-        } else {
-          info.classList.add('visible');
-          info.textContent = n === 1 ? '1 foto geselecteerd' : n + ' foto\'s geselecteerd';
-        }
-      });
-
-      form.addEventListener('submit', () => {
-        if (input.files.length === 0) return;
-        btn.disabled = true;
-        btnText.textContent = 'Bezig met uploaden';
-        const spinner = document.createElement('span');
-        spinner.className = 'spinner';
-        btnIcon.replaceWith(spinner);
-      });
-
-      // Live caption counter
       const cap = document.getElementById('caption');
       const counter = document.getElementById('captionCounter');
-      cap.addEventListener('input', () => {
-        counter.textContent = cap.value.length + ' / 240';
-      });
+      if (cap && counter) {
+        cap.addEventListener('input', () => {
+          counter.textContent = cap.value.length + ' / 240';
+        });
+      }
     })();
   </script>
 

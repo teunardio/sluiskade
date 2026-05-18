@@ -49,6 +49,11 @@ STORAGE_WARN_BYTES = int(STORAGE_QUOTA_BYTES * 0.95)
 # without letting someone send a 200MB file.
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 
+# Per-batch cap. UX-grens (geen technische): meer dan 10 tegelijk wordt
+# onoverzichtelijk voor de uploader en duurt te lang op mobiele data.
+# Wie meer wil uploaden doet 't in twee batches.
+MAX_FILES_PER_UPLOAD = 10
+
 # Image dimensions
 MAX_DIMENSION = 2400      # longest side of stored photo
 THUMB_WIDTH = 480         # masonry grid thumbnail width

@@ -928,6 +928,55 @@ def admin_purge_photo(photo_id: int):
     return redirect(url_for("admin_prullenbak"))
 
 
+@app.route("/admin/qr-poster")
+@admin_auth.require_admin
+def admin_qr_poster():
+    """Preview-pagina voor de A4 QR-poster.
+    Genereert een verse token zodat de admin live ziet wat 'ie krijgt;
+    de daadwerkelijke download mint nogmaals een verse token zodat
+    preview-URL en gedownloade URL identiek zijn van structuur (niet
+    waarde, want elke generate_qr_token() levert een nieuwe signature)."""
+    import base64
+    import pdf_poster
+    from tokens import generate_qr_token
+
+    token = generate_qr_token()
+    qr_url = f"{PUBLIC_BASE_URL}/sluis?t={token}"
+    qr_png = pdf_poster._qr_png_bytes(qr_url, box_size=10)
+    qr_data_url = "data:image/png;base64," + base64.b64encode(qr_png).decode("ascii")
+
+    return render_template(
+        "admin/qr_poster.html",
+        qr_url=qr_url,
+        qr_data_url=qr_data_url,
+    )
+
+
+@app.route("/admin/qr-poster/download.pdf", methods=["POST"])
+@admin_auth.require_admin
+def admin_qr_poster_download():
+    """Mint een verse QR-token, render de A4 poster en stream als PDF.
+    Filename bevat een datum zodat je makkelijk meerdere versies bewaart."""
+    import pdf_poster
+    from datetime import datetime, timezone
+    from tokens import generate_qr_token
+
+    token = generate_qr_token()
+    qr_url = f"{PUBLIC_BASE_URL}/sluis?t={token}"
+    pdf_bytes = pdf_poster.generate_qr_poster(qr_url)
+
+    today = datetime.now(timezone.utc).strftime("%Y%m%d")
+    app.logger.info("Admin downloadde QR-poster (%d bytes)", len(pdf_bytes))
+    return Response(
+        pdf_bytes,
+        mimetype="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="sluiskade-qr-poster-{today}.pdf"',
+            "Cache-Control": "no-store",
+        },
+    )
+
+
 # ---------------------------------------------------------------------------
 # Error handlers
 # ---------------------------------------------------------------------------

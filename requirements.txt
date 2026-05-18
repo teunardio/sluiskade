@@ -23,5 +23,8 @@ APScheduler==3.10.4
 # QR code generation
 qrcode[pil]==7.4.2
 
+# PDF generation (admin QR-poster voor sluiswachters)
+reportlab==4.2.5
+
 # HTTP / utilities
 requests==2.32.3

@@ -38,6 +38,9 @@
     <a class="a-tab {% if current == 'prullenbak' %}active{% endif %}" href="{{ url_for('admin_prullenbak') }}">
       {{ icon("trash", size=15, stroke=2) }}<span>Prullenbak</span>
     </a>
+    <a class="a-tab {% if current == 'qr-poster' %}active{% endif %}" href="{{ url_for('admin_qr_poster') }}">
+      {{ icon("qr-code", size=15, stroke=2) }}<span>QR poster</span>
+    </a>
   </div>
 </nav>
 

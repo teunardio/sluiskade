@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>QR poster, Sluiskade Admin</title>
+  {% include "_head_meta.html" %}
+  <style>
+    :root {
+      --deep:  #0c4a6e; --water: #0ea5e9; --foam: #e0f2fe;
+      --ink:   #0f172a; --paper: #f8fafc; --muted: #64748b; --soft: #ffffff;
+      --border: #bae6fd;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, var(--foam) 0%, var(--paper) 60%, #ffffff 100%);
+    }
+    .stage { padding: 2rem 1.5rem 4rem; max-width: 72rem; margin: 0 auto; }
+    header.page { margin-bottom: 1.5rem; }
+    h1 {
+      font-size: clamp(1.5rem, 4vw, 1.85rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.3rem;
+      color: var(--deep);
+    }
+    header.page p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+    @media (max-width: 880px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    .side-info {
+      background: var(--soft);
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      padding: 1.5rem;
+    }
+    .side-info h2 {
+      font-size: 1.05rem;
+      color: var(--deep);
+      margin: 0 0 0.5rem;
+      font-weight: 600;
+    }
+    .side-info p {
+      color: var(--ink);
+      font-size: 0.92rem;
+      line-height: 1.6;
+      margin: 0 0 0.85rem;
+    }
+    .side-info p.muted { color: var(--muted); font-size: 0.85rem; }
+
+    .url-card {
+      background: var(--paper);
+      border: 1px solid #e2e8f0;
+      border-radius: 0.6rem;
+      padding: 0.75rem 0.9rem;
+      margin-bottom: 1rem;
+      font-family: 'SF Mono', Menlo, Consolas, monospace;
+      font-size: 0.78rem;
+      color: var(--deep);
+      word-break: break-all;
+      line-height: 1.4;
+    }
+
+    .download-btn {
+      width: 100%;
+      padding: 1rem 1.5rem;
+      background: var(--water);
+      color: white;
+      font-weight: 600;
+      font-size: 1rem;
+      font-family: inherit;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 6px 18px rgba(14, 165, 233, 0.3);
+      transition: transform 0.1s ease;
+    }
+    .download-btn:hover { transform: translateY(-1px); }
+
+    .checklist {
+      list-style: none;
+      padding: 0;
+      margin: 1rem 0 0;
+    }
+    .checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.55rem;
+      padding: 0.45rem 0;
+      color: var(--ink);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+    .checklist li svg {
+      flex-shrink: 0;
+      color: var(--water);
+      margin-top: 2px;
+    }
+
+    /* ---------- Poster preview (HTML mockup) ---------- */
+    .preview-wrap {
+      position: relative;
+    }
+    .preview-label {
+      position: absolute;
+      top: -10px;
+      left: 16px;
+      background: var(--deep);
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 999px;
+      z-index: 2;
+    }
+
+    .poster {
+      background: var(--foam);
+      padding: 18px;
+      border-radius: 14px;
+      aspect-ratio: 210 / 297;
+      max-width: 100%;
+      box-shadow: 0 20px 50px -20px rgba(12, 74, 110, 0.35);
+    }
+    .poster-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      height: 100%;
+      padding: 8% 7% 6%;
+      display: flex;
+      flex-direction: column;
+      text-align: center;
+    }
+    .poster-brand {
+      font-weight: 700;
+      font-size: clamp(1.4rem, 2.6vw, 2rem);
+      letter-spacing: 0.02em;
+      margin: 0;
+    }
+    .poster-brand .deep { color: var(--deep); }
+    .poster-brand .water { color: var(--water); }
+
+    .poster-tagline {
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 0.3rem 0 0;
+    }
+
+    .poster-wave {
+      margin: 0.85rem auto 1.25rem;
+      width: 60px;
+      color: var(--water);
+    }
+
+    .poster-h1 {
+      font-size: clamp(1.5rem, 3.2vw, 2.2rem);
+      color: var(--deep);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0 0 1rem;
+    }
+
+    .poster-body {
+      color: var(--ink);
+      font-size: clamp(0.78rem, 1.1vw, 0.95rem);
+      line-height: 1.55;
+      margin: 0 auto 1.25rem;
+      max-width: 90%;
+    }
+    .poster-body p { margin: 0 0 0.6rem; }
+
+    .poster-qr-wrap {
+      background: var(--foam);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin: 0.5rem auto;
+      width: 50%;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .poster-qr-wrap img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      image-rendering: pixelated;
+    }
+
+    .poster-instr {
+      font-weight: 700;
+      color: var(--deep);
+      margin: 1rem 0 0.25rem;
+      font-size: clamp(0.85rem, 1.3vw, 1rem);
+    }
+    .poster-instr-sub {
+      color: var(--muted);
+      font-size: clamp(0.7rem, 1vw, 0.82rem);
+      margin: 0 0 0.75rem;
+    }
+    .poster-thanks {
+      color: var(--water);
+      font-style: italic;
+      font-size: clamp(0.82rem, 1.2vw, 0.95rem);
+      margin: 0.4rem 0;
+    }
+
+    .poster-footer {
+      margin-top: auto;
+      padding-top: 1rem;
+      font-size: clamp(0.65rem, 0.9vw, 0.75rem);
+      color: var(--muted);
+    }
+    .poster-footer .domain {
+      color: var(--deep);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+  {% from "_icons.html" import icon %}
+  {% from "admin/_topbar.html" import admin_topbar %}
+
+  {{ admin_topbar(current='qr-poster') }}
+
+  <main class="stage">
+    <header class="page">
+      <h1>QR poster voor het sluiswachtershuis</h1>
+      <p>Een vriendelijke A4 om uit te printen en op de ruit te plakken. Inclusief verse QR-code die direct naar de upload-pagina linkt.</p>
+    </header>
+
+    <div class="layout">
+      <div>
+        <div class="preview-wrap">
+          <span class="preview-label">Voorbeeld</span>
+          <div class="poster">
+            <div class="poster-card">
+              <h2 class="poster-brand">
+                <span class="deep">SLUIS</span><span class="water">KADE</span>
+              </h2>
+              <p class="poster-tagline">Bouwfoto's vanuit jouw uitzicht</p>
+              <svg class="poster-wave" viewBox="0 0 60 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                <path d="M2 6 C 8 1, 14 11, 20 6 S 32 1, 38 6 S 50 11, 58 6"/>
+              </svg>
+
+              <h3 class="poster-h1">Hallo sluiswachter!</h3>
+
+              <div class="poster-body">
+                <p>Naast jullie sluis verrijst Sluiskade, een nieuw buurtje met een handvol huizen aan het water.</p>
+                <p>De toekomstige bewoners volgen graag hoe hun huis vorm krijgt. Jullie hebben verreweg het mooiste uitzicht op de bouw, veel mooier dan elke bouwcamera ooit kan vastleggen.</p>
+                <p><strong>Zou je af en toe een foto willen delen?</strong></p>
+              </div>
+
+              <div class="poster-qr-wrap">
+                <img src="{{ qr_data_url }}" alt="QR-code naar upload pagina" />
+              </div>
+
+              <p class="poster-instr">Scan, kies een foto, klaar.</p>
+              <p class="poster-instr-sub">Werkt op elke smartphone, geen app nodig.</p>
+              <p class="poster-thanks">We zijn jullie eeuwig dankbaar.</p>
+
+              <div class="poster-footer">
+                Vragen of liever niet? Mail beheer@sluiskade.com.
+                <div class="domain">sluiskade.com</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="side-info">
+          <h2>Verse QR-token bij elke download</h2>
+          <p>Elke keer dat je hieronder op <strong>Download</strong> klikt mint de server een nieuwe HMAC-getekende token. De preview hierboven gebruikt een aparte token, dus de QR-codes verschillen, maar werken allebei.</p>
+          <p class="muted">Wil je alle bestaande posters in één klap ongeldig maken? Bump <code style="background: var(--paper); padding: 1px 5px; border-radius: 3px;">QR_TOKEN_VERSION</code> in Coolify en restart de container.</p>
+
+          <div class="url-card">
+            {{ qr_url }}
+          </div>
+
+          <form method="post" action="{{ url_for('admin_qr_poster_download') }}">
+            <button type="submit" class="download-btn">
+              {{ icon("download", size=18, stroke=2.25) }}
+              Download A4 poster (PDF)
+            </button>
+          </form>
+
+          <h2 style="margin-top: 1.5rem;">Tips voor het sluiswachtershuis</h2>
+          <ul class="checklist">
+            <li>
+              {{ icon("check", size=16, stroke=2.5) }}
+              <span>Print op gewoon A4 wit papier, kleurenprinter geeft een mooier resultaat maar zwart-wit werkt ook.</span>
+            </li>
+            <li>
+              {{ icon("check", size=16, stroke=2.5) }}
+              <span>Plak 'm aan de binnenkant van de ruit, op ooghoogte. QR werkt ook door dubbel glas.</span>
+            </li>
+            <li>
+              {{ icon("check", size=16, stroke=2.5) }}
+              <span>Zorg voor genoeg licht. In een donkere ruimte met spotlight erop kan de scan-camera de QR niet goed lezen.</span>
+            </li>
+            <li>
+              {{ icon("check", size=16, stroke=2.5) }}
+              <span>Loop er zelf even langs en scan 'm met je telefoon om te checken of 't werkt vóór je 'm achterlaat.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

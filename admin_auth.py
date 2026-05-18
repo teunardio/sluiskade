@@ -180,10 +180,10 @@ def get_admin_email() -> Optional[str]:
 # ---------------------------------------------------------------------------
 
 def require_admin(view: Callable) -> Callable:
-    """Redirect naar /admin/login als er geen geldige admin-sessie is."""
+    """Redirect naar de unified login als er geen geldige admin-sessie is."""
     @wraps(view)
     def wrapper(*args, **kwargs):
         if not has_valid_admin_session():
-            return redirect(url_for("admin_login"))
+            return redirect(url_for("portaal_login"))
         return view(*args, **kwargs)
     return wrapper

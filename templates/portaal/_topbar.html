@@ -1,15 +1,23 @@
 {#
    Bewoners-portaal topbar with brand + 'Verras me' link + email + logout.
+   Toont optionele 'Admin' link wanneer is_admin truthy is.
+
    Usage:
        {% from "portaal/_topbar.html" import topbar %}
-       {{ topbar(email) }}
+       {{ topbar(email, is_admin=is_admin) }}
 #}
 
-{% macro topbar(email) %}
+{% macro topbar(email, is_admin=False) %}
 {% from "_icons.html" import icon %}
 <nav class="portaal-topbar" aria-label="Bewonersportaal navigatie">
   <a class="portaal-brand" href="{{ url_for('portaal_index') }}">Sluis<span>kade</span></a>
   <div class="portaal-topbar-right">
+    {% if is_admin %}
+    <a class="portaal-admin-link" href="{{ url_for('admin_dashboard') }}" title="Beheerpaneel">
+      {{ icon("shield", size=14, stroke=2.25) }}
+      <span>Admin</span>
+    </a>
+    {% endif %}
     <a class="portaal-shuffle" href="{{ url_for('portaal_random') }}" title="Toon mij een willekeurige foto">
       {{ icon("shuffle", size=16, stroke=2) }}
       <span>Verras me</span>
@@ -65,6 +73,28 @@
   .portaal-shuffle:hover {
     background: rgba(14, 165, 233, 0.18);
     transform: translateY(-1px);
+  }
+  .portaal-admin-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.85rem;
+    background: rgba(180, 83, 9, 0.08);
+    color: #92400e;
+    border: 1px solid rgba(180, 83, 9, 0.2);
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.82rem;
+    transition: all 0.15s ease;
+  }
+  .portaal-admin-link:hover {
+    background: rgba(180, 83, 9, 0.18);
+    transform: translateY(-1px);
+  }
+  @media (max-width: 600px) {
+    .portaal-admin-link span { display: none; }
+    .portaal-admin-link { padding: 0.45rem; }
   }
   .portaal-email {
     color: #64748b;

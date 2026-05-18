@@ -5,22 +5,31 @@
   <title>Aanvragen, Sluiskade Admin</title>
   {% include "_head_meta.html" %}
   <style>
-    :root { --ink:#0f172a; --soft:#1e293b; --softer:#334155; --amber:#f59e0b; --muted:#94a3b8; }
+    :root {
+      --deep:  #0c4a6e; --water: #0ea5e9; --foam: #e0f2fe;
+      --ink:   #0f172a; --paper: #f8fafc; --muted: #64748b; --soft: #ffffff;
+    }
     * { box-sizing: border-box; }
     html, body {
       margin: 0; padding: 0; min-height: 100vh;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      color: #f1f5f9;
-      background: #0a0f1f;
+      color: var(--ink);
+      background: linear-gradient(180deg, var(--foam) 0%, var(--paper) 60%, #ffffff 100%);
     }
     .stage { padding: 2rem 1.5rem 4rem; max-width: 56rem; margin: 0 auto; }
     header.page { margin-bottom: 1.5rem; }
-    h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 0.3rem; color: white; }
+    h1 {
+      font-size: clamp(1.5rem, 4vw, 1.85rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.3rem;
+      color: var(--deep);
+    }
     header.page p { margin: 0; color: var(--muted); font-size: 0.92rem; }
 
     .request-card {
       background: var(--soft);
-      border: 1px solid var(--softer);
+      border: 1px solid #e2e8f0;
       border-radius: 1rem;
       padding: 1.5rem;
       margin-bottom: 1rem;
@@ -32,7 +41,7 @@
     .req-name {
       font-size: 1.05rem;
       font-weight: 600;
-      color: white;
+      color: var(--deep);
       margin: 0 0 0.2rem;
     }
     .req-email {
@@ -46,17 +55,17 @@
       margin-bottom: 0.75rem;
     }
     .req-motivatie {
-      background: #0a0f1f;
-      border: 1px solid #1e293b;
+      background: var(--paper);
+      border: 1px solid #e2e8f0;
       border-radius: 0.6rem;
       padding: 0.85rem 1rem;
-      color: #cbd5e1;
-      font-size: 0.88rem;
+      color: #475569;
+      font-size: 0.9rem;
       line-height: 1.5;
       font-style: italic;
     }
-    .req-motivatie::before { content: '\201C'; margin-right: 4px; color: var(--amber); }
-    .req-motivatie::after  { content: '\201D'; margin-left: 4px;  color: var(--amber); }
+    .req-motivatie::before { content: '\201C'; margin-right: 4px; color: var(--water); }
+    .req-motivatie::after  { content: '\201D'; margin-left: 4px;  color: var(--water); }
     .req-empty-motivatie {
       color: var(--muted);
       font-size: 0.82rem;
@@ -70,9 +79,9 @@
       align-self: flex-start;
     }
     .btn {
-      padding: 0.6rem 1.1rem;
-      border-radius: 0.5rem;
-      font-size: 0.85rem;
+      padding: 0.65rem 1.2rem;
+      border-radius: 999px;
+      font-size: 0.88rem;
       font-weight: 600;
       font-family: inherit;
       border: none;
@@ -80,31 +89,32 @@
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      transition: all 0.15s ease;
-      min-width: 130px;
+      transition: transform 0.1s ease, background 0.15s ease;
+      min-width: 140px;
       justify-content: center;
     }
     .btn-approve {
       background: #10b981;
       color: white;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
     }
     .btn-approve:hover { background: #059669; transform: translateY(-1px); }
     .btn-reject {
       background: transparent;
-      color: #fca5a5;
-      border: 1px solid rgba(252, 165, 165, 0.3);
+      color: #b91c1c;
+      border: 1px solid #fecaca;
     }
-    .btn-reject:hover { background: rgba(220, 38, 38, 0.15); color: #fee2e2; }
+    .btn-reject:hover { background: #fef2f2; color: #991b1b; border-color: #fca5a5; }
 
     .empty {
       text-align: center;
       padding: 4rem 1.5rem;
       background: var(--soft);
-      border: 1px solid var(--softer);
+      border: 1px solid #e2e8f0;
       border-radius: 1rem;
       color: var(--muted);
     }
-    .empty h2 { color: white; margin: 0 0 0.5rem; font-size: 1.15rem; font-weight: 600; }
+    .empty h2 { color: var(--deep); margin: 0 0 0.5rem; font-size: 1.15rem; font-weight: 600; }
     .empty p { margin: 0; line-height: 1.6; font-size: 0.92rem; }
 
     .form-inline { margin: 0; }
@@ -119,7 +129,7 @@
   <main class="stage">
     <header class="page">
       <h1>Toegangsaanvragen</h1>
-      <p>{{ aanvragen | length }} {{ 'aanvraag' if aanvragen|length == 1 else 'aanvragen' }} wachten op je beslissing.</p>
+      <p>{{ aanvragen | length }} {{ 'aanvraag wacht' if aanvragen|length == 1 else 'aanvragen wachten' }} op je beslissing.</p>
     </header>
 
     {% if aanvragen %}
@@ -153,7 +163,7 @@
     {% else %}
       <div class="empty">
         <h2>Geen openstaande aanvragen</h2>
-        <p>Zodra iemand zich aanmeldt via het publieke formulier verschijnt 'ie hier met 1-klik knoppen voor goedkeuren of weigeren.</p>
+        <p>Zodra iemand zich aanmeldt via het publieke formulier verschijnt 'ie hier met knoppen voor goedkeuren of weigeren.</p>
       </div>
     {% endif %}
   </main>

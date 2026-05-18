@@ -62,6 +62,16 @@ app.config["MAX_CONTENT_LENGTH"] = 150 * 1024 * 1024
 PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "https://sluiskade.com")
 GOAL_TOTAL = int(os.environ.get("GOAL_TOTAL", "1000"))
 
+@app.context_processor
+def inject_session_flags():
+    """Maak is_admin overal in templates beschikbaar zonder dat elke route
+    'm expliciet hoeft door te geven. Templates die de portaal-topbar
+    aanroepen kunnen direct {{ is_admin }} gebruiken."""
+    return {
+        "is_admin": admin_auth.has_valid_admin_session(),
+    }
+
+
 # Initialize the database on import (idempotent · safe under gunicorn forks)
 db.init_db()
 
@@ -439,7 +449,13 @@ def portaal_aanvragen_bedankt():
 
 @app.route("/portaal/login", methods=["GET", "POST"])
 def portaal_login():
-    """Step 1 of the magic-link flow: bewoner submits their email."""
+    """Stap 1 van de magic-link flow: e-mail invoeren.
+
+    Dit is OOK het admin-loginpad: als het admin-adres binnenkomt sturen
+    we gewoon een OTP, en pas na de OTP-stap (in portaal_verify) wordt
+    het admin-pad afgesplitst naar een wachtwoord-prompt. Externen kunnen
+    daardoor niet aan de login zien of een adres bewoner of admin is.
+    """
     if bewoner_auth.has_valid_bewoner_session() and request.method == "GET":
         return redirect(url_for("portaal_index"))
 
@@ -452,9 +468,10 @@ def portaal_login():
                 email=email,
             )
 
-        if not db.is_email_allowed(email):
-            # Do not confirm whether the email exists, just hint at the
-            # access-request flow. The aanvragen route lands in the next step.
+        is_admin = admin_auth.is_admin_email(email)
+        is_bewoner = db.is_email_allowed(email)
+
+        if not (is_admin or is_bewoner):
             return render_template(
                 "portaal/login.html",
                 error="Dit e-mailadres staat (nog) niet op de lijst.",
@@ -462,9 +479,16 @@ def portaal_login():
                 show_request_link=True,
             )
 
-        code = bewoner_auth.create_and_save_otp(email)
-        mail.send_otp_email(email, code)
-        app.logger.info("Sent OTP to %s", email)
+        # Voor admin gebruiken we admin_auth.create_admin_otp (zelfde
+        # tabel, andere mail). Voor bewoners de normale flow.
+        if is_admin:
+            code = admin_auth.create_admin_otp()
+            mail.send_admin_otp_email(code)
+            app.logger.info("Sent admin OTP to %s", email)
+        else:
+            code = bewoner_auth.create_and_save_otp(email)
+            mail.send_otp_email(email, code)
+            app.logger.info("Sent OTP to %s", email)
 
         return redirect(url_for("portaal_verify", email=email))
 
@@ -473,7 +497,10 @@ def portaal_login():
 
 @app.route("/portaal/verify", methods=["GET", "POST"])
 def portaal_verify():
-    """Step 2 of the magic-link flow: bewoner types the OTP we mailed."""
+    """Stap 2: OTP-code invoeren. Daarna:
+        - bewoner → meteen ingelogd
+        - admin   → door naar wachtwoord-stap (/portaal/password)
+    """
     email = (
         request.form.get("email", "")
         or request.args.get("email", "")
@@ -491,16 +518,55 @@ def portaal_verify():
                 error="De code klopt niet, of is verlopen. Probeer opnieuw of vraag een nieuwe code aan.",
             )
 
+        # OTP klopt. Splits hier op rol.
+        if admin_auth.is_admin_email(email):
+            # Markeer email-factor als geslaagd, stuur naar password-stap.
+            # Nog geen sessie, alleen een kortlopende tussen-cookie.
+            response = make_response(redirect(url_for("portaal_password")))
+            return admin_auth.set_otp_passed_cookie(response)
+
+        # Reguliere bewoner: meteen sessie.
         response = make_response(redirect(url_for("portaal_index")))
         return bewoner_auth.set_bewoner_session_cookie(response, email)
 
     return render_template("portaal/verify.html", email=email)
 
 
+@app.route("/portaal/password", methods=["GET", "POST"])
+def portaal_password():
+    """Stap 3 (alleen admin): wachtwoord invoeren. Vereist dat de
+    OTP-stap zojuist geslaagd is (admin_otp_passed cookie)."""
+    if not admin_auth.has_otp_passed():
+        return redirect(url_for("portaal_login"))
+
+    if request.method == "POST":
+        password = request.form.get("password", "")
+        if not admin_auth.verify_admin_password(password):
+            app.logger.warning("Admin wachtwoord-poging mislukt")
+            return render_template(
+                "portaal/password.html",
+                error="Wachtwoord klopt niet. Probeer opnieuw of begin opnieuw met inloggen.",
+            )
+        # Beide factoren goed. Geef admin sessie + ook een bewoner-sessie
+        # zodat de admin ook alle portaal-features kan gebruiken.
+        response = make_response(redirect(url_for("portaal_index")))
+        admin_auth.clear_otp_passed_cookie(response)
+        admin_auth.set_admin_session_cookie(response)
+        bewoner_auth.set_bewoner_session_cookie(response, admin_auth.ADMIN_EMAIL)
+        app.logger.info("Admin login compleet")
+        return response
+
+    return render_template("portaal/password.html")
+
+
 @app.route("/portaal/logout", methods=["POST"])
 def portaal_logout():
+    """Wist beide sessies (bewoner + admin) zodat één klik op uitloggen
+    écht uitlogt, ook als je admin was."""
     response = make_response(redirect(url_for("portaal_login")))
-    return bewoner_auth.clear_bewoner_session_cookie(response)
+    bewoner_auth.clear_bewoner_session_cookie(response)
+    admin_auth.clear_admin_session_cookie(response)
+    return response
 
 
 # ---------------------------------------------------------------------------
@@ -702,94 +768,18 @@ def serve_photo(photo_id: int):
 
 
 # ---------------------------------------------------------------------------
-# Admin flow (sprint 3) - magic-link + wachtwoord (2FA)
+# Admin pages (sprint 3)
+# Login gaat via /portaal/login (unified flow), zie hierboven. Deze routes
+# zijn alleen de admin-specifieke schermen, allemaal protected door
+# require_admin decorator.
 # ---------------------------------------------------------------------------
 
 @app.route("/admin")
 def admin_index():
-    """Root van het admin-paneel. Stuur door naar dashboard of login."""
+    """Stuur door naar dashboard of de unified login."""
     if admin_auth.has_valid_admin_session():
         return redirect(url_for("admin_dashboard"))
-    return redirect(url_for("admin_login"))
-
-
-@app.route("/admin/login", methods=["GET", "POST"])
-def admin_login():
-    """Stap 1: e-mail invoeren. Moet matchen met ADMIN_EMAIL uit env."""
-    if admin_auth.has_valid_admin_session() and request.method == "GET":
-        return redirect(url_for("admin_dashboard"))
-
-    if not admin_auth.is_admin_password_configured():
-        # Gebruiker heeft nog geen ADMIN_PASSWORD_HASH ingesteld; geef hint
-        return render_template(
-            "admin/login.html",
-            error="Admin is nog niet geconfigureerd. Stel ADMIN_PASSWORD_HASH in via .env (gebruik `flask gen-admin-password-hash`).",
-            setup_needed=True,
-        )
-
-    if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
-        # Voor alle ingevoerde adressen pretenden dat we een mail sturen,
-        # om enumeration te voorkomen. Maar in werkelijkheid sturen we
-        # alleen als het écht het admin-adres is.
-        if admin_auth.is_admin_email(email):
-            code = admin_auth.create_admin_otp()
-            mail.send_admin_otp_email(code)
-            app.logger.info("Admin OTP requested for %s", email)
-        else:
-            app.logger.warning("Admin login attempt with wrong email: %s", email)
-        # Zelfde response voor goed of fout, zodat aanvallers niet kunnen
-        # ontdekken welk e-mailadres de admin is.
-        return redirect(url_for("admin_verify"))
-
-    return render_template("admin/login.html")
-
-
-@app.route("/admin/verify", methods=["GET", "POST"])
-def admin_verify():
-    """Stap 2: OTP-code uit de mail invoeren."""
-    if request.method == "POST":
-        code = request.form.get("code", "").strip()
-        if not admin_auth.verify_admin_otp(code):
-            return render_template(
-                "admin/verify.html",
-                error="Code klopt niet of is verlopen. Vraag een nieuwe code aan via /admin/login.",
-            )
-        # OTP goed: zet de tussen-cookie en stuur naar password-stap
-        response = make_response(redirect(url_for("admin_password")))
-        return admin_auth.set_otp_passed_cookie(response)
-
-    return render_template("admin/verify.html")
-
-
-@app.route("/admin/password", methods=["GET", "POST"])
-def admin_password():
-    """Stap 3: wachtwoord. Vereist dat OTP-stap geslaagd is."""
-    if not admin_auth.has_otp_passed():
-        return redirect(url_for("admin_login"))
-
-    if request.method == "POST":
-        password = request.form.get("password", "")
-        if not admin_auth.verify_admin_password(password):
-            app.logger.warning("Admin wachtwoord-poging mislukt")
-            return render_template(
-                "admin/password.html",
-                error="Wachtwoord klopt niet. Probeer opnieuw of vraag een nieuwe code aan.",
-            )
-        # Beide factoren goed: geef volle admin sessie + ruim otp-cookie op
-        response = make_response(redirect(url_for("admin_dashboard")))
-        admin_auth.clear_otp_passed_cookie(response)
-        admin_auth.set_admin_session_cookie(response)
-        app.logger.info("Admin login compleet voor %s", admin_auth.ADMIN_EMAIL)
-        return response
-
-    return render_template("admin/password.html")
-
-
-@app.route("/admin/logout", methods=["POST"])
-def admin_logout():
-    response = make_response(redirect(url_for("admin_login")))
-    return admin_auth.clear_admin_session_cookie(response)
+    return redirect(url_for("portaal_login"))
 
 
 @app.route("/admin/dashboard")

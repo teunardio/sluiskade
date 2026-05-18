@@ -206,7 +206,7 @@
   {% from "portaal/_topbar.html" import topbar %}
   {% from "portaal/_tabs.html" import tabs %}
 
-  {{ topbar(email) }}
+  {{ topbar(email, is_admin=is_admin) }}
 
   <main class="stage">
     <header>

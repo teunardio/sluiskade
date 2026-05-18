@@ -213,7 +213,7 @@
   {% from "_icons.html" import icon %}
   {% from "portaal/_topbar.html" import topbar %}
 
-  {{ topbar(email) }}
+  {{ topbar(email, is_admin=is_admin) }}
 
   <main class="stage">
     <div class="greet">

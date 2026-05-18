@@ -5,32 +5,42 @@
   <title>Prullenbak, Sluiskade Admin</title>
   {% include "_head_meta.html" %}
   <style>
-    :root { --ink:#0f172a; --soft:#1e293b; --softer:#334155; --amber:#f59e0b; --muted:#94a3b8; }
+    :root {
+      --deep:  #0c4a6e; --water: #0ea5e9; --foam: #e0f2fe;
+      --ink:   #0f172a; --paper: #f8fafc; --muted: #64748b; --soft: #ffffff;
+    }
     * { box-sizing: border-box; }
     html, body {
       margin: 0; padding: 0; min-height: 100vh;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      color: #f1f5f9;
-      background: #0a0f1f;
+      color: var(--ink);
+      background: linear-gradient(180deg, var(--foam) 0%, var(--paper) 60%, #ffffff 100%);
     }
     .stage { padding: 2rem 1.5rem 4rem; max-width: 72rem; margin: 0 auto; }
     header.page { margin-bottom: 1.5rem; }
-    h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 0.3rem; color: white; }
+    h1 {
+      font-size: clamp(1.5rem, 4vw, 1.85rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.3rem;
+      color: var(--deep);
+    }
     header.page p { margin: 0; color: var(--muted); font-size: 0.92rem; }
 
     .info-bar {
-      background: rgba(245, 158, 11, 0.1);
-      border: 1px solid rgba(245, 158, 11, 0.25);
-      color: #fde68a;
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+      color: #92400e;
       padding: 0.85rem 1.1rem;
       border-radius: 0.75rem;
-      font-size: 0.85rem;
+      font-size: 0.88rem;
       line-height: 1.5;
       margin-bottom: 1.5rem;
       display: flex;
       gap: 0.75rem;
       align-items: flex-start;
     }
+    .info-bar svg { flex-shrink: 0; margin-top: 1px; }
 
     .grid {
       display: grid;
@@ -40,66 +50,71 @@
 
     .trash-card {
       background: var(--soft);
-      border: 1px solid var(--softer);
+      border: 1px solid #e2e8f0;
       border-radius: 0.75rem;
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
+    .trash-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px -14px rgba(12, 74, 110, 0.2);
+    }
+
     .trash-thumb {
       aspect-ratio: 1;
       overflow: hidden;
       position: relative;
-      background: #0a0f1f;
+      background: var(--paper);
     }
     .trash-thumb img {
       width: 100%; height: 100%;
       object-fit: cover;
-      filter: grayscale(0.4) brightness(0.85);
+      filter: grayscale(0.5) brightness(0.92);
     }
     .age-badge {
       position: absolute;
       top: 6px; left: 6px;
-      background: rgba(15, 23, 42, 0.85);
-      color: #fde68a;
+      background: rgba(15, 23, 42, 0.65);
+      color: white;
       font-size: 0.7rem;
       font-weight: 600;
-      padding: 3px 8px;
+      padding: 3px 9px;
       border-radius: 999px;
       backdrop-filter: blur(6px);
     }
-    .age-badge.warning { color: #fca5a5; background: rgba(220, 38, 38, 0.85); }
 
     .trash-meta {
       padding: 0.7rem 0.85rem;
-      font-size: 0.75rem;
+      font-size: 0.76rem;
       color: var(--muted);
-      border-bottom: 1px solid #1e293b;
+      border-bottom: 1px solid #f1f5f9;
     }
     .trash-meta .deleted-when {
-      color: #cbd5e1;
+      color: var(--deep);
       font-weight: 500;
-      font-size: 0.8rem;
+      font-size: 0.82rem;
     }
     .trash-meta .deleted-who {
       margin-top: 2px;
-      font-size: 0.7rem;
+      font-size: 0.72rem;
     }
 
     .trash-actions {
       display: flex;
-      padding: 0.6rem;
+      padding: 0.55rem;
       gap: 0.4rem;
     }
     .trash-actions form { flex: 1; margin: 0; }
     .trash-actions button {
       width: 100%;
-      padding: 0.5rem 0.7rem;
+      padding: 0.55rem 0.5rem;
       border-radius: 0.4rem;
       font-size: 0.78rem;
       font-weight: 600;
       font-family: inherit;
-      border: none;
+      border: 1px solid;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -108,27 +123,27 @@
       transition: all 0.15s ease;
     }
     .btn-restore {
-      background: rgba(16, 185, 129, 0.15);
-      color: #6ee7b7;
-      border: 1px solid rgba(16, 185, 129, 0.3);
+      background: #ecfdf5;
+      color: #047857;
+      border-color: #a7f3d0;
     }
-    .btn-restore:hover { background: rgba(16, 185, 129, 0.3); color: #d1fae5; }
+    .btn-restore:hover { background: #d1fae5; }
     .btn-purge {
-      background: rgba(220, 38, 38, 0.15);
-      color: #fca5a5;
-      border: 1px solid rgba(252, 165, 165, 0.25);
+      background: #fef2f2;
+      color: #b91c1c;
+      border-color: #fecaca;
     }
-    .btn-purge:hover { background: rgba(220, 38, 38, 0.4); color: #fee2e2; }
+    .btn-purge:hover { background: #fee2e2; }
 
     .empty {
       text-align: center;
       padding: 4rem 1.5rem;
       background: var(--soft);
-      border: 1px solid var(--softer);
+      border: 1px solid #e2e8f0;
       border-radius: 1rem;
       color: var(--muted);
     }
-    .empty h2 { color: white; margin: 0 0 0.5rem; font-size: 1.15rem; font-weight: 600; }
+    .empty h2 { color: var(--deep); margin: 0 0 0.5rem; font-size: 1.15rem; font-weight: 600; }
     .empty p { margin: 0; line-height: 1.6; font-size: 0.92rem; }
   </style>
 </head>
@@ -141,7 +156,7 @@
   <main class="stage">
     <header class="page">
       <h1>Prullenbak</h1>
-      <p>{{ total }} {{ 'foto' if total == 1 else "foto's" }} wachten op definitieve actie. Auto-purge ruimt alles ouder dan 30 dagen op.</p>
+      <p>{{ total }} {{ 'foto' if total == 1 else "foto's" }} {{ 'wacht' if total == 1 else 'wachten' }} op definitieve actie. Auto-purge ruimt na 30 dagen alles op.</p>
     </header>
 
     <div class="info-bar">

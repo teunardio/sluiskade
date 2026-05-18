@@ -1,110 +1,175 @@
-{# Admin-topbar met nav + logout. Geel/amber accent zodat 't visueel
-   duidelijk anders is dan het blauwe bewoner-portaal. #}
+{# Admin-topbar in dezelfde lichte stijl als de bewoner-portaal, met
+   een 'Admin' badge en tabs voor de admin-secties. Gebruikt:
+
+       {% from "admin/_topbar.html" import admin_topbar %}
+       {{ admin_topbar(current='dashboard', email=admin_email) }}
+#}
 {% from "_icons.html" import icon %}
 
-{% macro admin_topbar(current='dashboard') %}
+{% macro admin_topbar(current='dashboard', email='') %}
+<nav class="a-topbar" aria-label="Admin navigatie">
+  <div class="a-topbar-row">
+    <div class="a-brand-wrap">
+      <a class="a-brand" href="{{ url_for('portaal_index') }}">Sluis<span>kade</span></a>
+      <span class="a-badge">{{ icon("shield", size=10, stroke=2.5) }} Admin</span>
+    </div>
+    <div class="a-topbar-right">
+      <a class="a-back-link" href="{{ url_for('portaal_index') }}" title="Terug naar bewonersportaal">
+        {{ icon("arrow-left", size=14, stroke=2.25) }}
+        <span>Portaal</span>
+      </a>
+      {% if email %}<span class="a-email">{{ email }}</span>{% endif %}
+      <form method="post" action="{{ url_for('portaal_logout') }}" class="a-logout-form">
+        <button class="a-logout" type="submit">Uitloggen</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="a-tabs">
+    <a class="a-tab {% if current == 'dashboard' %}active{% endif %}" href="{{ url_for('admin_dashboard') }}">
+      {{ icon("bar-chart", size=15, stroke=2) }}<span>Dashboard</span>
+    </a>
+    <a class="a-tab {% if current == 'bewoners' %}active{% endif %}" href="{{ url_for('admin_bewoners') }}">
+      {{ icon("users", size=15, stroke=2) }}<span>Bewoners</span>
+    </a>
+    <a class="a-tab {% if current == 'aanvragen' %}active{% endif %}" href="{{ url_for('admin_aanvragen') }}">
+      {{ icon("inbox", size=15, stroke=2) }}<span>Aanvragen</span>
+    </a>
+    <a class="a-tab {% if current == 'prullenbak' %}active{% endif %}" href="{{ url_for('admin_prullenbak') }}">
+      {{ icon("trash", size=15, stroke=2) }}<span>Prullenbak</span>
+    </a>
+  </div>
+</nav>
+
 <style>
   .a-topbar {
-    background: #0f172a;
-    border-bottom: 1px solid #1e293b;
-    padding: 0.7rem 1.25rem;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid #e2e8f0;
     position: sticky;
     top: 0;
     z-index: 50;
   }
-  .a-topbar-inner {
-    max-width: 80rem;
-    margin: 0 auto;
+  .a-topbar-row {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.5rem 0.5rem;
     gap: 1rem;
   }
+  .a-brand-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
   .a-brand {
-    color: #f1f5f9;
-    text-decoration: none;
     font-weight: 700;
-    font-size: 1rem;
+    color: #0c4a6e;
+    text-decoration: none;
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+  }
+  .a-brand span { color: #0ea5e9; font-weight: 400; }
+  .a-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-  }
-  .a-brand .badge {
-    background: #f59e0b;
-    color: #0f172a;
-    font-size: 0.62rem;
+    gap: 0.25rem;
+    background: rgba(180, 83, 9, 0.1);
+    color: #92400e;
+    font-size: 0.65rem;
     font-weight: 700;
-    padding: 2px 7px;
+    padding: 3px 9px;
     border-radius: 999px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
+    border: 1px solid rgba(180, 83, 9, 0.2);
   }
-  .a-nav {
+
+  .a-topbar-right {
     display: flex;
-    gap: 0.25rem;
-    overflow-x: auto;
-    flex: 1;
-    margin-left: 1rem;
-  }
-  .a-nav-link {
-    display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.4rem 0.85rem;
-    color: #94a3b8;
-    text-decoration: none;
-    border-radius: 999px;
+    gap: 0.6rem;
     font-size: 0.85rem;
-    font-weight: 500;
-    white-space: nowrap;
-    transition: color 0.15s ease, background 0.15s ease;
   }
-  .a-nav-link:hover { color: #f1f5f9; background: rgba(255,255,255,0.04); }
-  .a-nav-link.active {
-    background: rgba(245, 158, 11, 0.15);
-    color: #fbbf24;
-  }
-  .a-logout {
+  .a-back-link {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.4rem 0.9rem;
-    background: rgba(220, 38, 38, 0.1);
-    color: #fca5a5;
-    border: 1px solid rgba(252, 165, 165, 0.2);
+    gap: 0.35rem;
+    padding: 0.4rem 0.85rem;
+    background: rgba(14, 165, 233, 0.08);
+    color: #0c4a6e;
+    border: 1px solid rgba(14, 165, 233, 0.18);
     border-radius: 999px;
-    font-size: 0.82rem;
+    text-decoration: none;
     font-weight: 500;
-    font-family: inherit;
-    cursor: pointer;
     transition: all 0.15s ease;
   }
-  .a-logout:hover { background: rgba(220, 38, 38, 0.25); color: #fee2e2; }
-</style>
+  .a-back-link:hover {
+    background: rgba(14, 165, 233, 0.18);
+    transform: translateY(-1px);
+  }
+  .a-email {
+    color: #64748b;
+    max-width: 18ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .a-logout-form { margin: 0; }
+  .a-logout {
+    padding: 0.4rem 0.9rem;
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85rem;
+    transition: all 0.15s ease;
+  }
+  .a-logout:hover {
+    color: #0c4a6e;
+    border-color: #0c4a6e;
+    background: white;
+  }
+  @media (max-width: 640px) {
+    .a-email { display: none; }
+    .a-back-link span { display: none; }
+    .a-back-link { padding: 0.45rem; }
+  }
 
-<header class="a-topbar">
-  <div class="a-topbar-inner">
-    <a class="a-brand" href="{{ url_for('admin_dashboard') }}">
-      Sluiskade <span class="badge">Admin</span>
-    </a>
-    <nav class="a-nav">
-      <a class="a-nav-link {% if current == 'dashboard' %}active{% endif %}" href="{{ url_for('admin_dashboard') }}">
-        {{ icon("bar-chart", size=16, stroke=2) }} Dashboard
-      </a>
-      <a class="a-nav-link {% if current == 'bewoners' %}active{% endif %}" href="{{ url_for('admin_bewoners') }}">
-        {{ icon("users", size=16, stroke=2) }} Bewoners
-      </a>
-      <a class="a-nav-link {% if current == 'aanvragen' %}active{% endif %}" href="{{ url_for('admin_aanvragen') }}">
-        {{ icon("inbox", size=16, stroke=2) }} Aanvragen
-      </a>
-      <a class="a-nav-link {% if current == 'prullenbak' %}active{% endif %}" href="{{ url_for('admin_prullenbak') }}">
-        {{ icon("trash", size=16, stroke=2) }} Prullenbak
-      </a>
-    </nav>
-    <form method="post" action="{{ url_for('admin_logout') }}" style="margin: 0;">
-      <button class="a-logout" type="submit">
-        {{ icon("log-out", size=14, stroke=2) }} Uitloggen
-      </button>
-    </form>
-  </div>
-</header>
+  /* Admin tab strip */
+  .a-tabs {
+    display: flex;
+    gap: 0.1rem;
+    padding: 0 1.5rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .a-tabs::-webkit-scrollbar { display: none; }
+  .a-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.7rem 1rem;
+    color: #64748b;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease;
+    margin-bottom: -1px;
+  }
+  .a-tab:hover { color: #0c4a6e; }
+  .a-tab.active {
+    color: #0c4a6e;
+    border-bottom-color: #0ea5e9;
+    font-weight: 600;
+  }
+  @media (max-width: 480px) {
+    .a-tab { padding: 0.7rem 0.7rem; }
+  }
+</style>
 {% endmacro %}

@@ -5,22 +5,31 @@
   <title>Bewoners, Sluiskade Admin</title>
   {% include "_head_meta.html" %}
   <style>
-    :root { --ink:#0f172a; --soft:#1e293b; --softer:#334155; --amber:#f59e0b; --muted:#94a3b8; }
+    :root {
+      --deep:  #0c4a6e; --water: #0ea5e9; --foam: #e0f2fe;
+      --ink:   #0f172a; --paper: #f8fafc; --muted: #64748b; --soft: #ffffff;
+    }
     * { box-sizing: border-box; }
     html, body {
       margin: 0; padding: 0; min-height: 100vh;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      color: #f1f5f9;
-      background: #0a0f1f;
+      color: var(--ink);
+      background: linear-gradient(180deg, var(--foam) 0%, var(--paper) 60%, #ffffff 100%);
     }
-    .stage { padding: 2rem 1.5rem 4rem; max-width: 64rem; margin: 0 auto; }
+    .stage { padding: 2rem 1.5rem 4rem; max-width: 56rem; margin: 0 auto; }
     header.page { margin-bottom: 1.5rem; }
-    h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 0.3rem; color: white; }
+    h1 {
+      font-size: clamp(1.5rem, 4vw, 1.85rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.3rem;
+      color: var(--deep);
+    }
     header.page p { margin: 0; color: var(--muted); font-size: 0.92rem; }
 
     .panel {
       background: var(--soft);
-      border: 1px solid var(--softer);
+      border: 1px solid #e2e8f0;
       border-radius: 1rem;
       padding: 1.5rem;
       margin-bottom: 1.25rem;
@@ -28,14 +37,13 @@
     .panel-title {
       font-size: 1rem;
       font-weight: 600;
-      color: white;
+      color: var(--deep);
       margin: 0 0 1rem;
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
     }
 
-    /* Add form */
     .add-form {
       display: grid;
       grid-template-columns: 2fr 1fr auto;
@@ -45,65 +53,65 @@
       .add-form { grid-template-columns: 1fr; }
     }
     .add-form input {
-      padding: 0.7rem 0.9rem;
-      background: #0f172a;
-      border: 1px solid var(--softer);
+      padding: 0.75rem 0.9rem;
+      background: var(--paper);
+      border: 1px solid #cbd5e1;
       border-radius: 0.5rem;
-      color: white;
+      color: var(--ink);
       font-size: 0.9rem;
       font-family: inherit;
       outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
     .add-form input:focus {
-      border-color: var(--amber);
-      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+      border-color: var(--water);
+      background: white;
+      box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.12);
     }
     .add-form button {
-      padding: 0.7rem 1.25rem;
-      background: var(--amber);
-      color: var(--ink);
-      font-weight: 700;
+      padding: 0.75rem 1.25rem;
+      background: var(--water);
+      color: white;
+      font-weight: 600;
       font-size: 0.88rem;
       font-family: inherit;
       border: none;
-      border-radius: 0.5rem;
+      border-radius: 999px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 0.4rem;
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.2);
+      transition: transform 0.1s ease;
     }
-    .add-form button:hover { background: #fbbf24; }
+    .add-form button:hover { transform: translateY(-1px); }
 
-    /* List */
     .bewoner-row {
       display: flex;
       align-items: center;
       gap: 1rem;
       padding: 0.85rem 0;
-      border-bottom: 1px solid #1e293b;
+      border-bottom: 1px solid #f1f5f9;
     }
     .bewoner-row:last-child { border-bottom: none; }
     .avatar {
-      width: 36px; height: 36px;
+      width: 38px; height: 38px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+      background: linear-gradient(135deg, var(--water), #38bdf8);
       color: white;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 0.88rem;
+      font-size: 0.9rem;
       flex-shrink: 0;
     }
-    .bewoner-info {
-      flex: 1;
-      min-width: 0;
-    }
+    .bewoner-info { flex: 1; min-width: 0; }
     .bewoner-name {
       font-weight: 600;
-      color: white;
-      font-size: 0.9rem;
+      color: var(--deep);
+      font-size: 0.92rem;
       margin: 0 0 2px;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -111,23 +119,26 @@
     }
     .bewoner-email {
       color: var(--muted);
-      font-size: 0.78rem;
+      font-size: 0.8rem;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
     .bewoner-meta {
       color: var(--muted);
-      font-size: 0.72rem;
+      font-size: 0.74rem;
       margin-right: 0.5rem;
       white-space: nowrap;
     }
+    @media (max-width: 480px) {
+      .bewoner-meta { display: none; }
+    }
     .delete-btn {
-      background: rgba(220, 38, 38, 0.1);
-      color: #fca5a5;
-      border: 1px solid rgba(252, 165, 165, 0.2);
-      border-radius: 0.5rem;
-      padding: 0.45rem 0.7rem;
+      background: transparent;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+      border-radius: 999px;
+      padding: 0.45rem 0.85rem;
       font-size: 0.78rem;
       font-family: inherit;
       cursor: pointer;
@@ -137,8 +148,9 @@
       transition: all 0.15s ease;
     }
     .delete-btn:hover {
-      background: rgba(220, 38, 38, 0.25);
-      color: #fee2e2;
+      background: #fef2f2;
+      color: #991b1b;
+      border-color: #fca5a5;
     }
     .empty {
       text-align: center;
@@ -157,7 +169,7 @@
   <main class="stage">
     <header class="page">
       <h1>Bewoners</h1>
-      <p>{{ bewoners | length }} {{ 'bewoner' if bewoners|length == 1 else 'bewoners' }} hebben toegang tot het portaal.</p>
+      <p>{{ bewoners | length }} {{ 'bewoner heeft' if bewoners|length == 1 else 'bewoners hebben' }} toegang tot het portaal.</p>
     </header>
 
     <div class="panel">
@@ -165,7 +177,7 @@
         {{ icon("plus", size=18, stroke=2) }} Voeg een bewoner toe
       </h2>
       <form class="add-form" method="post" action="{{ url_for('admin_bewoners') }}">
-        <input type="email" name="email" required placeholder="email@adres.nl" autocomplete="off" />
+        <input type="email" name="email" required placeholder="naam@voorbeeld.nl" autocomplete="off" />
         <input type="text" name="name" placeholder="Naam (optioneel)" autocomplete="off" />
         <button type="submit">
           {{ icon("plus", size=14, stroke=2.5) }} Toevoegen

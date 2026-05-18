@@ -98,6 +98,19 @@ def healthz():
     return {"status": "ok"}, 200
 
 
+@app.route("/sw.js")
+def service_worker():
+    """Server de service worker vanuit de root zodat hij scope=/ heeft.
+    Vanuit /static/sw.js zou de scope alleen /static/ zijn, daar hebben we
+    niks aan. Cache-Control op no-store omdat SW-updates meteen actief
+    moeten worden bij een deploy."""
+    response = make_response(send_from_directory(
+        app.static_folder, "sw.js", mimetype="application/javascript",
+    ))
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 @app.route("/portaal")
 def portaal_index():
     """Bewoners dashboard. Stats + latest photos + quick-access cards."""

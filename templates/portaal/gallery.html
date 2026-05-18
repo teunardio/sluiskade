@@ -63,11 +63,139 @@
     .empty h2 { color: var(--deep); font-size: 1.15rem; margin: 0 0 0.5rem; }
     .empty p { margin: 0; line-height: 1.6; font-size: 0.95rem; }
 
+    /* Filter bar */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin: 1rem 0 0.75rem;
+      align-items: center;
+    }
+    .filter-search {
+      position: relative;
+      flex: 1 1 220px;
+      min-width: 220px;
+      display: flex;
+      align-items: center;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 999px;
+      padding: 0.4rem 0.85rem 0.4rem 0.85rem;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .filter-search:focus-within {
+      border-color: var(--water);
+      box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.12);
+    }
+    .filter-search svg { color: var(--muted); flex-shrink: 0; }
+    .filter-search input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      padding: 0.3rem 0.5rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      color: var(--ink);
+      min-width: 0;
+    }
+    .filter-search input::-webkit-search-cancel-button { display: none; }
+    .filter-clear {
+      background: rgba(15, 23, 42, 0.08);
+      color: var(--muted);
+      border: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      cursor: pointer;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .filter-clear:hover { background: rgba(15, 23, 42, 0.15); color: var(--ink); }
+
+    .filter-chips {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .filter-chips .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.4rem 0.9rem;
+      background: white;
+      color: var(--muted);
+      border: 1px solid #e2e8f0;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .filter-chips .chip:hover {
+      color: var(--deep);
+      border-color: #cbd5e1;
+    }
+    .filter-chips .chip.active {
+      background: var(--deep);
+      color: white;
+      border-color: var(--deep);
+    }
+    .filter-chips .chip.active svg { color: #bae6fd; }
+
+    .filter-month-wrap select {
+      padding: 0.4rem 0.85rem;
+      background: white;
+      color: var(--ink);
+      border: 1px solid #e2e8f0;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-family: inherit;
+      cursor: pointer;
+      outline: none;
+    }
+    .filter-month-wrap select:focus {
+      border-color: var(--water);
+    }
+
+    .filter-counter {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin: 0 0 0.75rem;
+    }
+    .filter-counter strong { color: var(--deep); font-weight: 600; }
+
+    .empty-filter {
+      text-align: center;
+      padding: 3rem 1.5rem;
+      background: white;
+      border: 1px dashed #cbd5e1;
+      border-radius: 1rem;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .link-btn {
+      background: none;
+      border: none;
+      color: var(--water);
+      font-family: inherit;
+      font-size: inherit;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+    }
+    .link-btn:hover { color: var(--deep); }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
       gap: 10px;
     }
+    .thumb.hidden-by-filter { display: none; }
 
     .thumb {
       position: relative;
@@ -280,10 +408,60 @@
     {{ tabs(current='gallery') }}
 
     {% if photos %}
+      <div class="filter-bar" id="filterBar">
+        <div class="filter-search">
+          {{ icon("search", size=16, stroke=2) }}
+          <input type="search" id="searchInput" placeholder="Zoek in beschrijvingen..." autocomplete="off" />
+          <button type="button" class="filter-clear" id="searchClear" aria-label="Zoekopdracht wissen" hidden>
+            {{ icon("x", size=14, stroke=2.5) }}
+          </button>
+        </div>
+
+        <div class="filter-chips" role="tablist" aria-label="Filter op bron">
+          <button type="button" class="chip active" data-source="all">Alles</button>
+          <button type="button" class="chip" data-source="sluis">{{ icon("anchor", size=12, stroke=2.25) }} Sluiswachter</button>
+          <button type="button" class="chip" data-source="bewoner">{{ icon("home", size=12, stroke=2.25) }} Bewoners</button>
+          <button type="button" class="chip" data-source="liked">{{ icon("heart", size=12, stroke=2.25) }} Met hartje</button>
+        </div>
+
+        <div class="filter-month-wrap">
+          <select id="monthFilter" aria-label="Filter op maand">
+            <option value="all">Alle maanden</option>
+            {% set month_names = {
+              '01': 'Januari', '02': 'Februari', '03': 'Maart', '04': 'April',
+              '05': 'Mei', '06': 'Juni', '07': 'Juli', '08': 'Augustus',
+              '09': 'September', '10': 'Oktober', '11': 'November', '12': 'December'
+            } %}
+            {% set months = [] %}
+            {% for p in photos %}
+              {% set m = p.uploaded_at[:7] %}
+              {% if m not in months %}{% set _ = months.append(m) %}{% endif %}
+            {% endfor %}
+            {% for m in months %}
+              <option value="{{ m }}">{{ month_names.get(m[5:7], m[5:7]) }} {{ m[:4] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <p class="filter-counter" id="filterCounter" hidden>
+        <span id="filterVisible">{{ photos|length }}</span> van <strong>{{ photos|length }}</strong> zichtbaar
+      </p>
+
+      <p class="empty-filter" id="emptyFilter" hidden>
+        Geen foto's matchen je filter. <button type="button" id="resetFilters" class="link-btn">Filters wissen</button>
+      </p>
+
       <div class="grid" id="grid">
         {% for photo in photos %}
           {% set is_mine = photo.source == 'bewoner' and photo.uploader_email and email and photo.uploader_email|lower == email|lower %}
-          <div class="thumb" data-id="{{ photo.id }}">
+          <div class="thumb"
+               data-id="{{ photo.id }}"
+               data-source="{{ photo.source }}"
+               data-is-mine="{{ 1 if is_mine else 0 }}"
+               data-liked="{{ 1 if photo.liked_by_me else 0 }}"
+               data-month="{{ photo.uploaded_at[:7] }}"
+               data-caption="{{ (photo.caption or '')|lower }}">
             <a href="{{ url_for('portaal_view_photo', photo_id=photo.id) }}">
               <img src="{{ url_for('serve_thumb', photo_id=photo.id) }}" alt="" loading="lazy" />
               {% if photo.source == 'sluis' %}
@@ -427,6 +605,97 @@
           }
         });
       });
+
+      // -------------------------------------------------------------------
+      // Search + filter (client-side)
+      // -------------------------------------------------------------------
+      const grid = document.getElementById('grid');
+      if (!grid) return;
+      const thumbs = Array.from(grid.querySelectorAll('.thumb'));
+      const total = thumbs.length;
+      const searchInput = document.getElementById('searchInput');
+      const searchClear = document.getElementById('searchClear');
+      const monthSel = document.getElementById('monthFilter');
+      const chips = Array.from(document.querySelectorAll('.filter-chips .chip'));
+      const counter = document.getElementById('filterCounter');
+      const visibleEl = document.getElementById('filterVisible');
+      const emptyMsg = document.getElementById('emptyFilter');
+      const resetBtn = document.getElementById('resetFilters');
+
+      const state = { q: '', source: 'all', month: 'all' };
+
+      function applyFilters() {
+        const q = state.q.trim().toLowerCase();
+        let visible = 0;
+        thumbs.forEach(t => {
+          let show = true;
+          if (q) {
+            const cap = t.dataset.caption || '';
+            if (!cap.includes(q)) show = false;
+          }
+          if (show && state.source !== 'all') {
+            if (state.source === 'liked') {
+              if (t.dataset.liked !== '1') show = false;
+            } else {
+              if (t.dataset.source !== state.source) show = false;
+            }
+          }
+          if (show && state.month !== 'all') {
+            if (t.dataset.month !== state.month) show = false;
+          }
+          t.classList.toggle('hidden-by-filter', !show);
+          if (show) visible++;
+        });
+
+        const filtered = (state.q || state.source !== 'all' || state.month !== 'all');
+        counter.hidden = !filtered;
+        visibleEl.textContent = visible;
+        emptyMsg.hidden = !(filtered && visible === 0);
+        grid.style.display = (filtered && visible === 0) ? 'none' : '';
+      }
+
+      if (searchInput) {
+        searchInput.addEventListener('input', e => {
+          state.q = e.target.value;
+          searchClear.hidden = !state.q;
+          applyFilters();
+        });
+      }
+      if (searchClear) {
+        searchClear.addEventListener('click', () => {
+          searchInput.value = '';
+          state.q = '';
+          searchClear.hidden = true;
+          searchInput.focus();
+          applyFilters();
+        });
+      }
+      chips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          chips.forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          state.source = chip.dataset.source;
+          applyFilters();
+        });
+      });
+      if (monthSel) {
+        monthSel.addEventListener('change', e => {
+          state.month = e.target.value;
+          applyFilters();
+        });
+      }
+      if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+          searchInput.value = '';
+          state.q = '';
+          searchClear.hidden = true;
+          state.source = 'all';
+          chips.forEach(c => c.classList.toggle('active', c.dataset.source === 'all'));
+          state.month = 'all';
+          monthSel.value = 'all';
+          applyFilters();
+        });
+      }
     })();
   </script>
 

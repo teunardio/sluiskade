@@ -56,87 +56,6 @@
       line-height: 1.5;
     }
 
-    /* PWA install card - alleen zichtbaar wanneer installable + nog niet geinstalleerd */
-    .pwa-install-card {
-      display: flex;
-      align-items: flex-start;
-      gap: 1rem;
-      padding: 1.1rem 1.25rem;
-      background: linear-gradient(135deg, var(--foam) 0%, white 100%);
-      border: 1px solid #bae6fd;
-      border-radius: 1rem;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 4px 18px -10px rgba(14, 165, 233, 0.2);
-    }
-    .pwa-install-icon {
-      width: 42px;
-      height: 42px;
-      border-radius: 0.6rem;
-      background: var(--water);
-      color: white;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-    .pwa-install-body { flex: 1; min-width: 0; }
-    .pwa-install-body h3 {
-      margin: 0 0 0.25rem;
-      font-size: 0.98rem;
-      font-weight: 600;
-      color: var(--deep);
-    }
-    .pwa-install-body p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.85rem;
-      line-height: 1.5;
-    }
-    .pwa-install-actions {
-      display: flex;
-      gap: 0.4rem;
-      align-items: flex-start;
-      flex-shrink: 0;
-    }
-    .pwa-install-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      padding: 0.55rem 1.1rem;
-      background: var(--water);
-      color: white;
-      border: none;
-      border-radius: 999px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      font-family: inherit;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
-      transition: transform 0.1s ease;
-    }
-    .pwa-install-btn:hover { transform: translateY(-1px); }
-    .pwa-install-dismiss {
-      background: transparent;
-      color: var(--muted);
-      border: none;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      cursor: pointer;
-      padding: 0;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .pwa-install-dismiss:hover {
-      background: rgba(15, 23, 42, 0.06);
-      color: var(--deep);
-    }
-    @media (max-width: 540px) {
-      .pwa-install-card { flex-wrap: wrap; }
-      .pwa-install-actions { width: 100%; justify-content: space-between; margin-top: 0.5rem; }
-    }
-
     /* STATS */
     .stats {
       display: grid;
@@ -303,19 +222,6 @@
       <p>Je bent ingelogd als <strong>{{ email }}</strong>. Hieronder de stand van zaken.</p>
     </div>
 
-    <div class="pwa-install-card" id="pwaInstallCard" hidden>
-      <div class="pwa-install-icon">{{ icon("home", size=22, stroke=2) }}</div>
-      <div class="pwa-install-body">
-        <h3>Voeg Sluiskade toe aan je beginscherm</h3>
-        <p data-pwa-ios-hint hidden>Tik op het deel-icoon <strong>&#x2BAD;</strong> onderin Safari en kies <strong>Voeg toe aan beginscherm</strong>. Daarna opent Sluiskade als een echte app.</p>
-        <p>Daarna opent Sluiskade als een eigen app, zonder browser-balk, en kun je de laatst bekeken foto's ook offline doorbladeren.</p>
-      </div>
-      <div class="pwa-install-actions">
-        <button type="button" class="pwa-install-btn" data-pwa-install>{{ icon("download", size=14, stroke=2.25) }} Installeren</button>
-        <button type="button" class="pwa-install-dismiss" data-pwa-dismiss aria-label="Verberg">{{ icon("x", size=14, stroke=2.5) }}</button>
-      </div>
-    </div>
-
     <div class="stats">
       <div class="stat">
         <span class="stat-num">{{ stats.total }}</span>
@@ -405,8 +311,6 @@
       {% endif %}
     </div>
   </main>
-
-  <script src="{{ url_for('static', filename='pwa-install.js') }}"></script>
 
 </body>
 </html>

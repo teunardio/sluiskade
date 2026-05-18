@@ -352,37 +352,6 @@
     }
 
     /* =====================================================================
-       AVATARS row
-    ===================================================================== */
-    .avatars-row {
-      display: flex;
-      justify-content: center;
-      gap: -1rem;
-      margin: 2.5rem 0 0;
-      flex-wrap: wrap;
-    }
-    .avatar {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      border: 3px solid white;
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
-      margin-left: -12px;
-      transition: transform 0.3s ease;
-      flex-shrink: 0;
-    }
-    .avatar:first-child { margin-left: 0; }
-    .avatar:hover { transform: translateY(-6px) scale(1.08); z-index: 2; }
-
-    .avatar:nth-child(1) { background: #38bdf8; }
-    .avatar:nth-child(2) { background: #0ea5e9; width: 72px; height: 72px; }
-    .avatar:nth-child(3) { background: #fb923c; }
-    .avatar:nth-child(4) { background: #facc15; width: 80px; height: 80px; }
-    .avatar:nth-child(5) { background: #84cc16; }
-    .avatar:nth-child(6) { background: #a78bfa; width: 60px; height: 60px; }
-    .avatar:nth-child(7) { background: #f472b6; }
-
-    /* =====================================================================
        SLUISWACHTERS cards
     ===================================================================== */
     .three-cards {
@@ -534,11 +503,11 @@
         <div class="reveal">
           <div class="eyebrow">Over de plek</div>
           <h2>Aan het water, dichtbij de sluis</h2>
-          <p class="lede">Een nieuwe buurt aan de Sluiskade, REEVE fase drie. De huizen volgen het ritme van de oude haven: spitse daken, baksteen en hout, ramen die uitkijken op het wateroppervlak. De sluis ernaast doet zijn werk, en wij doen het onze: een buurt bouwen die het waard is om in te wonen.</p>
+          <p class="lede">Een nieuwe buurt aan de Sluiskade. De huizen volgen het ritme van de oude haven: spitse daken, baksteen en hout, ramen die uitkijken op het wateroppervlak. De sluis ernaast doet zijn werk, en wij doen het onze: een buurt bouwen die het waard is om in te wonen.</p>
 
           <div class="feature-chips">
             <div class="chip">{{ icon("anchor", size=16, stroke=2) }} Aan de sluis</div>
-            <div class="chip">{{ icon("wave-decoration", size=20, stroke=2) }} Op het water</div>
+            <div class="chip">{{ icon("waves", size=16, stroke=2) }} Aan het water</div>
             <div class="chip">{{ icon("home", size=16, stroke=2) }} Karakteristieke daken</div>
           </div>
         </div>
@@ -591,19 +560,9 @@
     <div class="container">
       <div class="two-col reverse">
         <div class="reveal">
-          <div class="eyebrow">Wie wonen er straks</div>
-          <h2>Hier hebben straks de buren een gezicht.</h2>
-          <p class="lede">We weten nog niet wie de meeste koffie zal halen of wie het eerste een tuin volplant met hortensia's. Wel dat het een buurt wordt waar je elkaar tegenkomt: bij de sluis, op het bankje, of in de WhatsApp groep die straks waarschijnlijk veel te druk is.</p>
-
-          <div class="avatars-row" aria-hidden="true">
-            <div class="avatar"></div>
-            <div class="avatar"></div>
-            <div class="avatar"></div>
-            <div class="avatar"></div>
-            <div class="avatar"></div>
-            <div class="avatar"></div>
-            <div class="avatar"></div>
-          </div>
+          <div class="eyebrow">Vooruitkijken</div>
+          <h2>Misschien meer dan alleen bouwfoto's.</h2>
+          <p class="lede">Voor nu is dit een platform om de bouw te volgen. Of het later, als iedereen er woont, ook iets voor de buurt wordt, foto's uit de straat, een mededeling over een feest, een plek voor afspraken met de aannemer, dat hangt af van wat jullie samen willen. We zien het rustig aan, in overleg, en alleen als het past.</p>
         </div>
         <div class="reveal delay-1">
           <div class="img-frame">
@@ -641,9 +600,9 @@
           <p>Boten in, boten uit. En tussendoor, als de tijd het toelaat, even bukken voor de mooie hoek.</p>
         </div>
         <div class="card reveal delay-3">
-          <div class="card-icon">{{ icon("coffee", size=28, stroke=2) }}</div>
-          <h3>Koffie drinken</h3>
-          <p>Want zonder die koffie staat het hele systeem stil. Een waarheid die te weinig wordt erkend.</p>
+          <div class="card-icon">{{ icon("navigation", size=28, stroke=2) }}</div>
+          <h3>Schippers veilig doorlaten</h3>
+          <p>Elke boot een eigen verhaal, elke schipper een eigen tempo. Vakwerk dat niet in een handleiding past.</p>
         </div>
       </div>
     </div>

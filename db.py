@@ -1,5 +1,5 @@
 """
-SQLite database — single file at /data/sluiskade.db.
+SQLite database · single file at /data/sluiskade.db.
 
 Schema is created on first access. We keep one table for now (photos);
 allowed_residents, access_requests, otps and sessions arrive in Sprint 2
@@ -68,7 +68,7 @@ def get_db() -> Iterator[sqlite3.Connection]:
 def init_db() -> None:
     """Create tables and indexes if they don't exist yet. Idempotent.
 
-    Also flips the database to WAL journal mode on first run — that's a
+    Also flips the database to WAL journal mode on first run · that's a
     persistent file-level setting so we only need to do it once.
     """
     with get_db() as conn:

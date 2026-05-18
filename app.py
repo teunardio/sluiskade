@@ -54,7 +54,7 @@ app.config["MAX_CONTENT_LENGTH"] = 150 * 1024 * 1024
 PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "https://sluiskade.com")
 GOAL_TOTAL = int(os.environ.get("GOAL_TOTAL", "1000"))
 
-# Initialize the database on import (idempotent — safe under gunicorn forks)
+# Initialize the database on import (idempotent · safe under gunicorn forks)
 db.init_db()
 
 
@@ -90,7 +90,7 @@ def sluis_entry():
     incoming_token = request.args.get("t")
 
     if incoming_token and verify_qr_token(incoming_token):
-        # Token strips out of the URL via redirect — keeps it out of browser history
+        # Token strips out of the URL via redirect · keeps it out of browser history
         response = make_response(redirect(url_for("sluis_upload")))
         return set_sluis_session_cookie(response)
 
@@ -140,7 +140,7 @@ def _handle_upload():
             errors.append((f.filename, str(exc)))
             app.logger.warning("Upload failed for %s: %s", f.filename, exc)
         except Exception as exc:  # noqa: BLE001 - last-resort catch
-            errors.append((f.filename, "Onverwachte fout — Teunard kijkt ernaar."))
+            errors.append((f.filename, "Onverwachte fout · de beheerder kijkt ernaar."))
             app.logger.exception("Unexpected upload error for %s", f.filename)
 
     if not saved_ids:
@@ -198,7 +198,7 @@ def sluis_delete_photo(photo_id: int):
 @app.route("/sluis/bedankt")
 @require_sluis_session
 def sluis_bedankt():
-    """Confirmation page — shows the thumbnails of what just landed."""
+    """Confirmation page · shows the thumbnails of what just landed."""
     ok_str = request.args.get("ok", "")
     photo_ids = [int(x) for x in ok_str.split(",") if x.isdigit()][:10]
 

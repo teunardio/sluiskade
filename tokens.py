@@ -3,18 +3,18 @@ Token signing & verification for the sluiswachter flow.
 
 Two distinct signed tokens are used:
 
-1.  **QR token** — long-lived, embedded in the QR code printed on A4.
+1.  **QR token** · long-lived, embedded in the QR code printed on A4.
     Anyone scanning the QR is granted access. Signed with QR_TOKEN_SECRET
     and salted with the current QR_TOKEN_VERSION, so bumping the version
     env var instantly invalidates every existing QR code without touching
     the database.
 
-2.  **Sluis session cookie** — short-lived (12 hours), set after a valid
+2.  **Sluis session cookie** · short-lived (12 hours), set after a valid
     QR scan. Lets the sluiswachter upload multiple photos without
     re-scanning during their shift. Signed with SECRET_KEY and salted
     independently so leaking one secret doesn't compromise the other.
 
-Both use itsdangerous.URLSafeTimedSerializer — battle-tested, URL-safe,
+Both use itsdangerous.URLSafeTimedSerializer · battle-tested, URL-safe,
 includes timestamp so we can enforce max-age.
 """
 from __future__ import annotations
@@ -41,13 +41,13 @@ QR_TOKEN_VERSION = int(os.environ.get("QR_TOKEN_VERSION", "1"))
 # of 5 years; rotation is done by bumping QR_TOKEN_VERSION, not by expiry.
 QR_TOKEN_MAX_AGE = 60 * 60 * 24 * 365 * 5  # 5 years
 
-# Shift cookie lifetime — a sluiswachter doesn't sit longer than this
+# Shift cookie lifetime · a sluiswachter doesn't sit longer than this
 SLUIS_SESSION_MAX_AGE = 60 * 60 * 12  # 12 hours
 SLUIS_SESSION_COOKIE = "sluis_session"
 
 
 # ---------------------------------------------------------------------------
-# QR token — signed payload embedded in the QR code on A4
+# QR token · signed payload embedded in the QR code on A4
 # ---------------------------------------------------------------------------
 
 def _qr_serializer() -> URLSafeTimedSerializer:
@@ -70,7 +70,7 @@ def generate_qr_token() -> str:
 def verify_qr_token(token: str) -> bool:
     """Return True if the token is a valid, non-expired QR token.
 
-    Any failure (bad signature, expired, wrong version) returns False —
+    Any failure (bad signature, expired, wrong version) returns False -
     we never want to leak why validation failed.
     """
     try:
@@ -81,7 +81,7 @@ def verify_qr_token(token: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Sluis session cookie — short-lived shift cookie set after a valid scan
+# Sluis session cookie · short-lived shift cookie set after a valid scan
 # ---------------------------------------------------------------------------
 
 def _session_serializer() -> URLSafeTimedSerializer:
@@ -113,7 +113,7 @@ def set_sluis_session_cookie(response):
     HttpOnly: not readable from JavaScript (XSS defense).
     Secure: only sent over HTTPS (always true in production via Traefik).
     SameSite=Lax: protects against CSRF while allowing the QR-scan redirect.
-    path=/: cookie is sent for every URL under the domain — needed so
+    path=/: cookie is sent for every URL under the domain · needed so
         the auth'd /media/* routes also receive it. The cookie name is
         unique per role (sluis_session, bewoner_session, etc.), so paths
         don't have to enforce isolation.
@@ -142,7 +142,7 @@ def clear_sluis_session_cookie(response):
 
 
 # ---------------------------------------------------------------------------
-# Decorator — protect every /sluis/* route except the entry point itself
+# Decorator · protect every /sluis/* route except the entry point itself
 # ---------------------------------------------------------------------------
 
 def require_sluis_session(view: Callable) -> Callable:

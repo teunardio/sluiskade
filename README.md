@@ -1,6 +1,6 @@
 # Sluiskade
 
-Een kleine Flask-app voor het delen van bouwfoto's van een woningbouwproject aan de Sluiskade. Sluiswachters van de naastgelegen sluis schieten foto's vanuit hun toren en uploaden die via een QR-code; toekomstige bewoners loggen in met een magic link en zien hoe hun huis vorm krijgt.
+Een kleine Flask-app voor het delen van bouwfoto's van een woningbouwproject aan de Sluiskade. Sluiswachters van de naastgelegen sluis schieten foto's vanuit het sluiswachtershuis en uploaden die via een QR-code; toekomstige bewoners loggen in met een magic link en zien hoe hun huis vorm krijgt.
 
 **Live op:** [sluiskade.com](https://sluiskade.com)
 **Stack:** Flask · SQLite · Pillow · Resend · Authentik · Docker · Coolify
@@ -9,7 +9,7 @@ Een kleine Flask-app voor het delen van bouwfoto's van een woningbouwproject aan
 
 ## Architectuur
 
-Eén Flask-app, één SQLite-database, één foto-volume — vier ingangen:
+Eén Flask-app, één SQLite-database, één foto-volume, met vier ingangen:
 
 | Pad | Voor wie | Authenticatie |
 |---|---|---|
@@ -24,7 +24,7 @@ Gehost op de droog.cloud stack (Contabo VPS + Coolify + Traefik + Let's Encrypt)
 
 Dit is een persoonlijk project, maar de broncode staat open omdat ik geloof in transparantie en omdat ik zelf vaak leer van andermans repos. Voel je vrij om rond te neuzen, ideeën te lenen of het patroon over te nemen voor een eigen project.
 
-Wat ik **niet** doe is issues en pull requests aannemen — zie [`CONTRIBUTING.md`](CONTRIBUTING.md). Voor vragen of vondsten zie [`SECURITY.md`](SECURITY.md).
+Wat ik **niet** doe is issues en pull requests aannemen. Zie [`CONTRIBUTING.md`](CONTRIBUTING.md). Voor vragen of vondsten zie [`SECURITY.md`](SECURITY.md).
 
 ## Veiligheid
 
@@ -32,4 +32,4 @@ Alle secrets (HMAC-keys, API-tokens, OIDC-credentials, session-keys) leven uitsl
 
 ## Licentie
 
-[MIT](LICENSE) — wat je ermee doet is aan jou, met de gebruikelijke "no warranty" clausule.
+[MIT](LICENSE). Wat je ermee doet is aan jou, met de gebruikelijke "no warranty" clausule.

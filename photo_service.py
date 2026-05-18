@@ -1,5 +1,5 @@
 """
-Photo upload pipeline — all the safety we need before a foreign byte
+Photo upload pipeline · all the safety we need before a foreign byte
 hits disk.
 
 The order of operations matters and is intentional:
@@ -58,7 +58,7 @@ ORIG_QUALITY = 88
 THUMB_QUALITY = 82
 
 # Explicit image-only whitelist. Anything detected outside this set is
-# rejected — including ALL video MIME types.
+# rejected · including ALL video MIME types.
 ALLOWED_MIME_TYPES = {
     "image/jpeg",
     "image/png",
@@ -69,7 +69,7 @@ ALLOWED_MIME_TYPES = {
 
 
 # ---------------------------------------------------------------------------
-# Exceptions — caught by the route to render friendly Dutch messages
+# Exceptions · caught by the route to render friendly Dutch messages
 # ---------------------------------------------------------------------------
 
 class PhotoError(Exception):
@@ -143,7 +143,7 @@ def save_photo(file_storage) -> SavedPhoto:
     """
     Run the full pipeline on a single werkzeug FileStorage.
 
-    Raises a PhotoError subclass on any failure — never writes to disk
+    Raises a PhotoError subclass on any failure · never writes to disk
     unless every check passes.
     """
     ensure_dirs()
@@ -161,14 +161,14 @@ def save_photo(file_storage) -> SavedPhoto:
             "Probeer 'm kleiner te maken of stuur een andere foto."
         )
 
-    # 2. Magic-byte sniff — the real MIME type, not the claim
+    # 2. Magic-byte sniff · the real MIME type, not the claim
     detected_mime = magic.from_buffer(raw, mime=True)
 
     # 3. Whitelist
     if detected_mime not in ALLOWED_MIME_TYPES:
         if detected_mime.startswith("video/"):
             raise UnsupportedFormat(
-                "Video's zijn (nog) niet toegestaan — alleen foto's."
+                "Video's zijn (nog) niet toegestaan · alleen foto's."
             )
         raise UnsupportedFormat(
             f"Dit bestandstype ({detected_mime}) wordt niet ondersteund. "
@@ -179,7 +179,7 @@ def save_photo(file_storage) -> SavedPhoto:
     used = get_storage_used_bytes()
     if used + size > STORAGE_QUOTA_BYTES:
         raise StorageFull(
-            "Het fotoalbum zit vol — Teunard krijgt automatisch een seintje. "
+            "Het fotoalbum zit vol · de beheerder krijgt automatisch een seintje. "
             "Probeer het later opnieuw."
         )
 
@@ -189,7 +189,7 @@ def save_photo(file_storage) -> SavedPhoto:
         img.load()  # force decode now so we catch corruption here
     except Exception as exc:
         raise CorruptImage(
-            "Deze foto kon niet geopend worden — mogelijk is hij beschadigd."
+            "Deze foto kon niet geopend worden · mogelijk is hij beschadigd."
         ) from exc
 
     # 6. EXIF auto-orient (iPhone portrait photos arrive sideways)

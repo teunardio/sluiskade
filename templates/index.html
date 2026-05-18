@@ -282,25 +282,31 @@
     }
     .img-frame:hover img { transform: scale(1.04); }
 
-    .stat-strip {
+    .feature-chips {
       display: flex;
-      gap: 2rem;
-      margin-top: 2rem;
       flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 2rem;
     }
-    .stat strong {
-      display: block;
-      font-size: 1.75rem;
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 1rem;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 999px;
+      font-size: 0.88rem;
+      font-weight: 500;
       color: var(--deep);
-      font-weight: 700;
-      line-height: 1;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-    .stat span {
-      font-size: 0.85rem;
-      color: var(--muted);
-      margin-top: 0.25rem;
-      display: block;
+    .chip:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px -6px rgba(12, 74, 110, 0.25);
     }
+    .chip svg { color: var(--water); flex-shrink: 0; }
 
     /* =====================================================================
        DE BOUW (gallery tease)
@@ -530,10 +536,10 @@
           <h2>Aan het water, dichtbij de sluis</h2>
           <p class="lede">Een nieuwe buurt aan de Sluiskade, REEVE fase drie. De huizen volgen het ritme van de oude haven: spitse daken, baksteen en hout, ramen die uitkijken op het wateroppervlak. De sluis ernaast doet zijn werk, en wij doen het onze: een buurt bouwen die het waard is om in te wonen.</p>
 
-          <div class="stat-strip">
-            <div class="stat"><strong>40+</strong><span>woningen</span></div>
-            <div class="stat"><strong>1</strong><span>sluis ernaast</span></div>
-            <div class="stat"><strong>365</strong><span>dagen per jaar uitzicht op water</span></div>
+          <div class="feature-chips">
+            <div class="chip">{{ icon("anchor", size=16, stroke=2) }} Aan de sluis</div>
+            <div class="chip">{{ icon("wave-decoration", size=20, stroke=2) }} Op het water</div>
+            <div class="chip">{{ icon("home", size=16, stroke=2) }} Karakteristieke daken</div>
           </div>
         </div>
         <div class="reveal delay-1">

@@ -32,8 +32,9 @@ from flask import (
 )
 
 import admin_auth
-import db
 import bewoner_auth
+import cf_turnstile
+import db
 import mail
 import photo_service
 from werkzeug.security import generate_password_hash
@@ -400,12 +401,15 @@ def portaal_delete_photo(photo_id: int):
 
 @app.route("/portaal/aanvragen", methods=["GET", "POST"])
 def portaal_aanvragen():
-    """Public access-request form. No auth needed."""
+    """Public access-request form. No auth needed.
+    Beschermd met Cloudflare Turnstile als CF_TURNSTILE_SITEKEY/SECRET
+    in de env staan."""
     if request.method == "POST":
         voornaam = request.form.get("voornaam", "").strip()
         achternaam = request.form.get("achternaam", "").strip()
         email = request.form.get("email", "").strip().lower()
         motivatie = request.form.get("motivatie", "").strip() or None
+        turnstile_token = request.form.get("cf-turnstile-response", "")
 
         # Basic validation
         if not voornaam or not achternaam or not email or "@" not in email:
@@ -416,6 +420,23 @@ def portaal_aanvragen():
                 achternaam=achternaam,
                 email=email,
                 motivatie=motivatie,
+                turnstile_sitekey=cf_turnstile.CF_TURNSTILE_SITEKEY,
+            )
+
+        # Cloudflare Turnstile anti-bot check. No-op als niet geconfigureerd.
+        # Cloudflare zet bij staging via Traefik vaak CF-Connecting-IP, val
+        # terug op remote_addr als die er niet is.
+        client_ip = request.headers.get("CF-Connecting-IP") or request.remote_addr
+        if not cf_turnstile.verify_token(turnstile_token, remote_ip=client_ip):
+            app.logger.warning("Turnstile-check faalde voor aanvraag van %s (IP %s)", email, client_ip)
+            return render_template(
+                "portaal/aanvragen.html",
+                error="De anti-bot check is mislukt. Vink de Cloudflare-bevestiging aan en probeer opnieuw.",
+                voornaam=voornaam,
+                achternaam=achternaam,
+                email=email,
+                motivatie=motivatie,
+                turnstile_sitekey=cf_turnstile.CF_TURNSTILE_SITEKEY,
             )
 
         # If they're already on the whitelist, skip the request and
@@ -429,6 +450,7 @@ def portaal_aanvragen():
                 email=email,
                 motivatie=motivatie,
                 already_allowed=True,
+                turnstile_sitekey=cf_turnstile.CF_TURNSTILE_SITEKEY,
             )
 
         request_id = db.save_access_request(email, voornaam, achternaam, motivatie)
@@ -438,7 +460,10 @@ def portaal_aanvragen():
 
         return redirect(url_for("portaal_aanvragen_bedankt"))
 
-    return render_template("portaal/aanvragen.html")
+    return render_template(
+        "portaal/aanvragen.html",
+        turnstile_sitekey=cf_turnstile.CF_TURNSTILE_SITEKEY,
+    )
 
 
 @app.route("/portaal/aanvragen/bedankt")

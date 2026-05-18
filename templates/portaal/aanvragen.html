@@ -5,6 +5,10 @@
   <title>Toegang aanvragen, Sluiskade</title>
   {% include "_head_meta.html" %}
 
+  {% if turnstile_sitekey %}
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  {% endif %}
+
   <style>
     :root {
       --deep:  #0c4a6e;
@@ -146,6 +150,15 @@
     .submit:hover { transform: translateY(-1px); }
     .submit svg { flex-shrink: 0; }
 
+    .turnstile-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 0.5rem;
+    }
+    .turnstile-row .cf-turnstile {
+      min-height: 65px;
+    }
+
     .back {
       display: inline-flex;
       align-items: center;
@@ -207,6 +220,12 @@
               <textarea id="motivatie" name="motivatie" placeholder="Bijvoorbeeld: ik koop kavel 12 aan de Sluiskade.">{{ motivatie or '' }}</textarea>
             </div>
           </div>
+
+          {% if turnstile_sitekey %}
+          <div class="row turnstile-row">
+            <div class="cf-turnstile" data-sitekey="{{ turnstile_sitekey }}" data-theme="light"></div>
+          </div>
+          {% endif %}
 
           <button class="submit" type="submit">
             Aanvraag versturen

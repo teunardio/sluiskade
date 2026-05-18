@@ -1,0 +1,110 @@
+{# Admin-topbar met nav + logout. Geel/amber accent zodat 't visueel
+   duidelijk anders is dan het blauwe bewoner-portaal. #}
+{% from "_icons.html" import icon %}
+
+{% macro admin_topbar(current='dashboard') %}
+<style>
+  .a-topbar {
+    background: #0f172a;
+    border-bottom: 1px solid #1e293b;
+    padding: 0.7rem 1.25rem;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .a-topbar-inner {
+    max-width: 80rem;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .a-brand {
+    color: #f1f5f9;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .a-brand .badge {
+    background: #f59e0b;
+    color: #0f172a;
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .a-nav {
+    display: flex;
+    gap: 0.25rem;
+    overflow-x: auto;
+    flex: 1;
+    margin-left: 1rem;
+  }
+  .a-nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.85rem;
+    color: #94a3b8;
+    text-decoration: none;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+  .a-nav-link:hover { color: #f1f5f9; background: rgba(255,255,255,0.04); }
+  .a-nav-link.active {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+  }
+  .a-logout {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.9rem;
+    background: rgba(220, 38, 38, 0.1);
+    color: #fca5a5;
+    border: 1px solid rgba(252, 165, 165, 0.2);
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .a-logout:hover { background: rgba(220, 38, 38, 0.25); color: #fee2e2; }
+</style>
+
+<header class="a-topbar">
+  <div class="a-topbar-inner">
+    <a class="a-brand" href="{{ url_for('admin_dashboard') }}">
+      Sluiskade <span class="badge">Admin</span>
+    </a>
+    <nav class="a-nav">
+      <a class="a-nav-link {% if current == 'dashboard' %}active{% endif %}" href="{{ url_for('admin_dashboard') }}">
+        {{ icon("bar-chart", size=16, stroke=2) }} Dashboard
+      </a>
+      <a class="a-nav-link {% if current == 'bewoners' %}active{% endif %}" href="{{ url_for('admin_bewoners') }}">
+        {{ icon("users", size=16, stroke=2) }} Bewoners
+      </a>
+      <a class="a-nav-link {% if current == 'aanvragen' %}active{% endif %}" href="{{ url_for('admin_aanvragen') }}">
+        {{ icon("inbox", size=16, stroke=2) }} Aanvragen
+      </a>
+      <a class="a-nav-link {% if current == 'prullenbak' %}active{% endif %}" href="{{ url_for('admin_prullenbak') }}">
+        {{ icon("trash", size=16, stroke=2) }} Prullenbak
+      </a>
+    </nav>
+    <form method="post" action="{{ url_for('admin_logout') }}" style="margin: 0;">
+      <button class="a-logout" type="submit">
+        {{ icon("log-out", size=14, stroke=2) }} Uitloggen
+      </button>
+    </form>
+  </div>
+</header>
+{% endmacro %}

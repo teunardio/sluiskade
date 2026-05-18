@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Aanvragen, Sluiskade Admin</title>
+  {% include "_head_meta.html" %}
+  <style>
+    :root { --ink:#0f172a; --soft:#1e293b; --softer:#334155; --amber:#f59e0b; --muted:#94a3b8; }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #f1f5f9;
+      background: #0a0f1f;
+    }
+    .stage { padding: 2rem 1.5rem 4rem; max-width: 56rem; margin: 0 auto; }
+    header.page { margin-bottom: 1.5rem; }
+    h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 0.3rem; color: white; }
+    header.page p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+
+    .request-card {
+      background: var(--soft);
+      border: 1px solid var(--softer);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .req-main { flex: 1; min-width: 240px; }
+    .req-name {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: white;
+      margin: 0 0 0.2rem;
+    }
+    .req-email {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 0.75rem;
+    }
+    .req-meta {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+    .req-motivatie {
+      background: #0a0f1f;
+      border: 1px solid #1e293b;
+      border-radius: 0.6rem;
+      padding: 0.85rem 1rem;
+      color: #cbd5e1;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      font-style: italic;
+    }
+    .req-motivatie::before { content: '\201C'; margin-right: 4px; color: var(--amber); }
+    .req-motivatie::after  { content: '\201D'; margin-left: 4px;  color: var(--amber); }
+    .req-empty-motivatie {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-style: italic;
+    }
+
+    .req-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-self: flex-start;
+    }
+    .btn {
+      padding: 0.6rem 1.1rem;
+      border-radius: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-family: inherit;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.15s ease;
+      min-width: 130px;
+      justify-content: center;
+    }
+    .btn-approve {
+      background: #10b981;
+      color: white;
+    }
+    .btn-approve:hover { background: #059669; transform: translateY(-1px); }
+    .btn-reject {
+      background: transparent;
+      color: #fca5a5;
+      border: 1px solid rgba(252, 165, 165, 0.3);
+    }
+    .btn-reject:hover { background: rgba(220, 38, 38, 0.15); color: #fee2e2; }
+
+    .empty {
+      text-align: center;
+      padding: 4rem 1.5rem;
+      background: var(--soft);
+      border: 1px solid var(--softer);
+      border-radius: 1rem;
+      color: var(--muted);
+    }
+    .empty h2 { color: white; margin: 0 0 0.5rem; font-size: 1.15rem; font-weight: 600; }
+    .empty p { margin: 0; line-height: 1.6; font-size: 0.92rem; }
+
+    .form-inline { margin: 0; }
+  </style>
+</head>
+<body>
+  {% from "_icons.html" import icon %}
+  {% from "admin/_topbar.html" import admin_topbar %}
+
+  {{ admin_topbar(current='aanvragen') }}
+
+  <main class="stage">
+    <header class="page">
+      <h1>Toegangsaanvragen</h1>
+      <p>{{ aanvragen | length }} {{ 'aanvraag' if aanvragen|length == 1 else 'aanvragen' }} wachten op je beslissing.</p>
+    </header>
+
+    {% if aanvragen %}
+      {% for req in aanvragen %}
+      <div class="request-card">
+        <div class="req-main">
+          <h2 class="req-name">{{ req.voornaam }} {{ req.achternaam }}</h2>
+          <div class="req-email">{{ req.email }}</div>
+          <div class="req-meta">Aangevraagd op {{ req.requested_at[:16].replace('T', ' ') }}</div>
+          {% if req.motivatie %}
+            <div class="req-motivatie">{{ req.motivatie }}</div>
+          {% else %}
+            <div class="req-empty-motivatie">(geen toelichting meegegeven)</div>
+          {% endif %}
+        </div>
+        <div class="req-actions">
+          <form class="form-inline" method="post" action="{{ url_for('admin_approve_request', request_id=req.id) }}">
+            <button class="btn btn-approve" type="submit">
+              {{ icon("check", size=14, stroke=2.5) }} Goedkeuren
+            </button>
+          </form>
+          <form class="form-inline" method="post" action="{{ url_for('admin_reject_request', request_id=req.id) }}"
+                onsubmit="return confirm('Aanvraag van {{ req.email }} weigeren?');">
+            <button class="btn btn-reject" type="submit">
+              {{ icon("x", size=14, stroke=2.5) }} Weigeren
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">
+        <h2>Geen openstaande aanvragen</h2>
+        <p>Zodra iemand zich aanmeldt via het publieke formulier verschijnt 'ie hier met 1-klik knoppen voor goedkeuren of weigeren.</p>
+      </div>
+    {% endif %}
+  </main>
+</body>
+</html>

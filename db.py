@@ -553,3 +553,131 @@ def cleanup_expired_otps() -> int:
             "WHERE expires_at < datetime('now', '-1 day') OR used_at IS NOT NULL"
         )
         return cur.rowcount
+
+
+# ---------------------------------------------------------------------------
+# Admin helpers (Sprint 3)
+# ---------------------------------------------------------------------------
+
+def list_soft_deleted_photos(*, limit: int = 200) -> list[dict]:
+    """Photos that sluiswachters soft-deleted. Newest delete first.
+    Used by /admin/prullenbak."""
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT * FROM photos
+            WHERE deleted_at IS NOT NULL
+            ORDER BY deleted_at DESC, id DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def count_soft_deleted_photos() -> int:
+    with get_db() as conn:
+        return conn.execute(
+            "SELECT COUNT(*) FROM photos WHERE deleted_at IS NOT NULL"
+        ).fetchone()[0]
+
+
+def restore_photo(photo_id: int) -> bool:
+    """Undo a soft-delete. Photo becomes visible again everywhere."""
+    with get_db() as conn:
+        cur = conn.execute(
+            """
+            UPDATE photos
+            SET deleted_at = NULL, deleted_by = NULL, deleted_reason = NULL
+            WHERE id = ? AND deleted_at IS NOT NULL
+            """,
+            (photo_id,),
+        )
+        return cur.rowcount > 0
+
+
+def purge_old_soft_deletes(*, days: int = 30) -> list[dict]:
+    """Find soft-deleted photos older than `days`, hard-delete the rows,
+    return the deleted rows so the caller can rm the files from disk.
+
+    Atomic: select + delete in one transaction zodat we niets verliezen.
+    """
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT * FROM photos
+            WHERE deleted_at IS NOT NULL
+              AND deleted_at < datetime('now', ?)
+            """,
+            (f"-{int(days)} days",),
+        ).fetchall()
+        rows = [dict(r) for r in rows]
+        if rows:
+            ids = [r["id"] for r in rows]
+            placeholders = ",".join("?" * len(ids))
+            conn.execute(
+                f"DELETE FROM photos WHERE id IN ({placeholders})", ids
+            )
+        return rows
+
+
+def list_top_uploaders(*, limit: int = 5) -> list[dict]:
+    """Bewoners + sluis aggregated by upload count, newest non-deleted only."""
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                COALESCE(uploader_email, '(sluiswachter)') AS who,
+                source,
+                COUNT(*) AS uploads,
+                MAX(uploaded_at) AS last_upload
+            FROM photos
+            WHERE deleted_at IS NULL
+            GROUP BY COALESCE(uploader_email, '(sluiswachter)'), source
+            ORDER BY uploads DESC, last_upload DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def uploads_per_week(*, weeks: int = 12) -> list[dict]:
+    """Photos uploaded per ISO-week, newest first. For the admin chart."""
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                strftime('%Y-%W', uploaded_at) AS yearweek,
+                COUNT(*) AS n
+            FROM photos
+            WHERE deleted_at IS NULL
+              AND uploaded_at >= datetime('now', ?)
+            GROUP BY yearweek
+            ORDER BY yearweek ASC
+            """,
+            (f"-{int(weeks) * 7} days",),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def admin_stats() -> dict:
+    """Overzicht voor /admin dashboard.
+    Bevat: totalen per source, prullenbak-count, deze-week uploads,
+    aantal bewoners, openstaande aanvragen."""
+    with get_db() as conn:
+        def _scalar(sql: str, params=()) -> int:
+            row = conn.execute(sql, params).fetchone()
+            return row[0] if row else 0
+
+        return {
+            "total_visible":       _scalar("SELECT COUNT(*) FROM photos WHERE deleted_at IS NULL"),
+            "total_sluis":         _scalar("SELECT COUNT(*) FROM photos WHERE deleted_at IS NULL AND source='sluis'"),
+            "total_bewoner":       _scalar("SELECT COUNT(*) FROM photos WHERE deleted_at IS NULL AND source='bewoner'"),
+            "uploads_week":        _scalar("SELECT COUNT(*) FROM photos WHERE deleted_at IS NULL AND uploaded_at >= datetime('now','-7 days')"),
+            "uploads_today":       _scalar("SELECT COUNT(*) FROM photos WHERE deleted_at IS NULL AND uploaded_at >= datetime('now','-1 day')"),
+            "trash_count":         _scalar("SELECT COUNT(*) FROM photos WHERE deleted_at IS NOT NULL"),
+            "bewoners_count":      _scalar("SELECT COUNT(*) FROM allowed_residents"),
+            "pending_requests":    _scalar("SELECT COUNT(*) FROM access_requests WHERE status='pending'"),
+            "total_likes":         _scalar("SELECT COUNT(*) FROM photo_likes"),
+        }

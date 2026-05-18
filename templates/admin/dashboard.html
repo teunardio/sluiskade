@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Dashboard, Sluiskade Admin</title>
+  {% include "_head_meta.html" %}
+  <style>
+    :root {
+      --ink: #0f172a;
+      --soft: #1e293b;
+      --softer: #334155;
+      --amber: #f59e0b;
+      --water: #0ea5e9;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #f1f5f9;
+      background: #0a0f1f;
+    }
+    .stage { padding: 2rem 1.5rem 4rem; max-width: 80rem; margin: 0 auto; }
+
+    header.page {
+      margin-bottom: 2rem;
+    }
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.3rem;
+      color: white;
+    }
+    header.page p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--soft);
+      border: 1px solid var(--softer);
+      border-radius: 1rem;
+      padding: 1.1rem 1.25rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px;
+      height: 100%;
+      background: var(--accent, var(--water));
+    }
+    .stat-card.amber { --accent: var(--amber); }
+    .stat-card.red   { --accent: #ef4444; }
+    .stat-card.green { --accent: #10b981; }
+    .stat-icon {
+      width: 32px; height: 32px;
+      border-radius: 0.5rem;
+      background: rgba(14, 165, 233, 0.15);
+      color: var(--water);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.75rem;
+    }
+    .stat-card.amber .stat-icon { background: rgba(245, 158, 11, 0.15); color: var(--amber); }
+    .stat-card.red   .stat-icon { background: rgba(239, 68, 68, 0.15);  color: #ef4444; }
+    .stat-card.green .stat-icon { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: white;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.4rem;
+    }
+
+    .section {
+      background: var(--soft);
+      border: 1px solid var(--softer);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      gap: 1rem;
+    }
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .section-title .icon-wrap {
+      width: 26px; height: 26px;
+      border-radius: 0.4rem;
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--amber);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Weekly chart - pure CSS bar chart */
+    .chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      height: 140px;
+      padding-top: 0.5rem;
+    }
+    .chart-bar {
+      flex: 1;
+      min-width: 0;
+      background: linear-gradient(to top, var(--water), #38bdf8);
+      border-radius: 4px 4px 0 0;
+      position: relative;
+      transition: opacity 0.15s ease;
+      min-height: 2px;
+    }
+    .chart-bar:hover { opacity: 0.85; }
+    .chart-bar .tip {
+      position: absolute;
+      top: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0a0f1f;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      pointer-events: none;
+    }
+    .chart-bar:hover .tip { opacity: 1; }
+    .chart-empty {
+      color: var(--muted);
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.88rem;
+    }
+    .chart-xlabels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.5rem;
+      font-size: 0.65rem;
+      color: var(--muted);
+    }
+
+    /* Top uploaders */
+    table.lite {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    table.lite th {
+      text-align: left;
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 0.72rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.5rem 0.5rem;
+      border-bottom: 1px solid var(--softer);
+    }
+    table.lite td {
+      padding: 0.65rem 0.5rem;
+      border-bottom: 1px solid #1e293b;
+      color: #e2e8f0;
+    }
+    table.lite tr:last-child td { border-bottom: none; }
+    .source-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      background: rgba(14, 165, 233, 0.15);
+      color: #bae6fd;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .source-pill.bewoner { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
+    .num { font-variant-numeric: tabular-nums; text-align: right; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    @media (max-width: 720px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    .quick-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.9rem;
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background 0.15s ease;
+    }
+    .quick-link:hover { background: rgba(245, 158, 11, 0.25); }
+  </style>
+</head>
+<body>
+  {% from "_icons.html" import icon %}
+  {% from "admin/_topbar.html" import admin_topbar %}
+
+  {{ admin_topbar(current='dashboard') }}
+
+  <main class="stage">
+    <header class="page">
+      <h1>Dashboard</h1>
+      <p>Welkom {{ admin_email }}. Hier zie je in een oogopslag hoe Sluiskade ervoor staat.</p>
+    </header>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-icon">{{ icon("image", size=18, stroke=2) }}</span>
+        <div class="stat-value">{{ stats.total_visible }}</div>
+        <div class="stat-label">Foto's zichtbaar</div>
+      </div>
+      <div class="stat-card green">
+        <span class="stat-icon">{{ icon("calendar", size=18, stroke=2) }}</span>
+        <div class="stat-value">{{ stats.uploads_week }}</div>
+        <div class="stat-label">Deze week</div>
+      </div>
+      <div class="stat-card amber">
+        <span class="stat-icon">{{ icon("users", size=18, stroke=2) }}</span>
+        <div class="stat-value">{{ stats.bewoners_count }}</div>
+        <div class="stat-label">Bewoners</div>
+      </div>
+      <div class="stat-card amber">
+        <span class="stat-icon">{{ icon("inbox", size=18, stroke=2) }}</span>
+        <div class="stat-value">{{ stats.pending_requests }}</div>
+        <div class="stat-label">Aanvragen open</div>
+      </div>
+      <div class="stat-card red">
+        <span class="stat-icon">{{ icon("trash", size=18, stroke=2) }}</span>
+        <div class="stat-value">{{ stats.trash_count }}</div>
+        <div class="stat-label">In prullenbak</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">{{ icon("heart", size=18, stroke=2) }}</span>
+        <div class="stat-value">{{ stats.total_likes }}</div>
+        <div class="stat-label">Hartjes totaal</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">{{ icon("hard-drive", size=18, stroke=2) }}</span>
+        <div class="stat-value">
+          {%- if disk_usage > 1073741824 -%}
+            {{ "%.2f"|format(disk_usage / 1073741824) }}<span style="font-size: 0.8rem; color: var(--muted);"> GB</span>
+          {%- else -%}
+            {{ "%.1f"|format(disk_usage / 1048576) }}<span style="font-size: 0.8rem; color: var(--muted);"> MB</span>
+          {%- endif -%}
+        </div>
+        <div class="stat-label">Opslag in gebruik</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">{{ icon("camera", size=18, stroke=2) }}</span>
+        <div class="stat-value">{{ stats.uploads_today }}</div>
+        <div class="stat-label">Vandaag binnen</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">
+            <span class="icon-wrap">{{ icon("bar-chart", size=14, stroke=2.5) }}</span>
+            Uploads per week (laatste 12 weken)
+          </div>
+        </div>
+        {% if weekly %}
+          {% set max_n = weekly | map(attribute='n') | max %}
+          <div class="chart">
+            {% for w in weekly %}
+              <div class="chart-bar" style="height: {{ ((w.n / max_n) * 100) | round(1) }}%;">
+                <span class="tip">{{ w.yearweek }}: {{ w.n }}</span>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="chart-xlabels">
+            <span>{{ weekly[0].yearweek }}</span>
+            <span>{{ weekly[-1].yearweek }}</span>
+          </div>
+        {% else %}
+          <div class="chart-empty">Nog geen uploads om in een grafiek te zetten.</div>
+        {% endif %}
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">
+            <span class="icon-wrap">{{ icon("users", size=14, stroke=2.5) }}</span>
+            Top uploaders
+          </div>
+          <a class="quick-link" href="{{ url_for('admin_bewoners') }}">
+            {{ icon("users", size=12, stroke=2) }} Beheer
+          </a>
+        </div>
+        {% if top_uploaders %}
+        <table class="lite">
+          <thead>
+            <tr>
+              <th>Wie</th>
+              <th>Bron</th>
+              <th class="num">Uploads</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in top_uploaders %}
+            <tr>
+              <td>{{ u.who }}</td>
+              <td><span class="source-pill {{ 'bewoner' if u.source == 'bewoner' }}">{{ u.source }}</span></td>
+              <td class="num">{{ u.uploads }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="chart-empty">Nog geen uploads.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if stats.pending_requests > 0 %}
+    <div class="section" style="border-color: rgba(245, 158, 11, 0.3); background: linear-gradient(to right, rgba(245, 158, 11, 0.08), var(--soft));">
+      <div class="section-header">
+        <div class="section-title">
+          <span class="icon-wrap">{{ icon("inbox", size=14, stroke=2.5) }}</span>
+          Er liggen {{ stats.pending_requests }} aanvragen op je wacht
+        </div>
+        <a class="quick-link" href="{{ url_for('admin_aanvragen') }}">
+          Bekijken {{ icon("arrow-right", size=12, stroke=2) }}
+        </a>
+      </div>
+    </div>
+    {% endif %}
+  </main>
+</body>
+</html>

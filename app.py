@@ -31,10 +31,12 @@ from flask import (
     url_for,
 )
 
+import admin_auth
 import db
 import bewoner_auth
 import mail
 import photo_service
+from werkzeug.security import generate_password_hash
 from photo_service import (
     PhotoError,
     save_photo,
@@ -62,6 +64,11 @@ GOAL_TOTAL = int(os.environ.get("GOAL_TOTAL", "1000"))
 
 # Initialize the database on import (idempotent · safe under gunicorn forks)
 db.init_db()
+
+# Start de auto-purge scheduler. Filesystem-lock zorgt ervoor dat alleen
+# één Gunicorn-worker de jobs daadwerkelijk draait.
+import scheduler  # noqa: E402
+scheduler.init_scheduler()
 
 
 # ---------------------------------------------------------------------------
@@ -649,17 +656,25 @@ def sluis_bedankt():
 # ---------------------------------------------------------------------------
 
 def _has_any_user_session() -> bool:
-    """Either a sluiswachter QR session or a bewoner login grants media access."""
-    return has_valid_sluis_session() or bewoner_auth.has_valid_bewoner_session()
+    """Sluis, bewoner, OF admin sessie geeft toegang tot /media/*."""
+    return (
+        has_valid_sluis_session()
+        or bewoner_auth.has_valid_bewoner_session()
+        or admin_auth.has_valid_admin_session()
+    )
 
 
 @app.route("/media/thumbs/<int:photo_id>")
 def serve_thumb(photo_id: int):
-    """Serve a thumbnail. Allowed for sluis OR bewoner sessions."""
+    """Serve a thumbnail. Allowed for sluis, bewoner OR admin sessions.
+    Admin mag ook soft-deleted thumbnails zien (voor de prullenbak-preview)."""
     if not _has_any_user_session():
         abort(403)
     photo = db.get_photo(photo_id)
-    if not photo or photo.get("deleted_at") or not photo.get("thumb_filename"):
+    if not photo or not photo.get("thumb_filename"):
+        abort(404)
+    # Soft-deleted foto's alleen zichtbaar voor admin (prullenbak)
+    if photo.get("deleted_at") and not admin_auth.has_valid_admin_session():
         abort(404)
     return send_from_directory(
         photo_service.THUMBS_DIR,
@@ -670,17 +685,225 @@ def serve_thumb(photo_id: int):
 
 @app.route("/media/photos/<int:photo_id>")
 def serve_photo(photo_id: int):
-    """Serve a full-size photo. Allowed for sluis OR bewoner sessions."""
+    """Serve a full-size photo. Allowed for sluis, bewoner OR admin sessions.
+    Admin mag ook soft-deleted foto's zien."""
     if not _has_any_user_session():
         abort(403)
     photo = db.get_photo(photo_id)
-    if not photo or photo.get("deleted_at"):
+    if not photo:
+        abort(404)
+    if photo.get("deleted_at") and not admin_auth.has_valid_admin_session():
         abort(404)
     return send_from_directory(
         photo_service.PHOTOS_DIR,
         photo["filename"],
         max_age=3600,
     )
+
+
+# ---------------------------------------------------------------------------
+# Admin flow (sprint 3) - magic-link + wachtwoord (2FA)
+# ---------------------------------------------------------------------------
+
+@app.route("/admin")
+def admin_index():
+    """Root van het admin-paneel. Stuur door naar dashboard of login."""
+    if admin_auth.has_valid_admin_session():
+        return redirect(url_for("admin_dashboard"))
+    return redirect(url_for("admin_login"))
+
+
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    """Stap 1: e-mail invoeren. Moet matchen met ADMIN_EMAIL uit env."""
+    if admin_auth.has_valid_admin_session() and request.method == "GET":
+        return redirect(url_for("admin_dashboard"))
+
+    if not admin_auth.is_admin_password_configured():
+        # Gebruiker heeft nog geen ADMIN_PASSWORD_HASH ingesteld; geef hint
+        return render_template(
+            "admin/login.html",
+            error="Admin is nog niet geconfigureerd. Stel ADMIN_PASSWORD_HASH in via .env (gebruik `flask gen-admin-password-hash`).",
+            setup_needed=True,
+        )
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        # Voor alle ingevoerde adressen pretenden dat we een mail sturen,
+        # om enumeration te voorkomen. Maar in werkelijkheid sturen we
+        # alleen als het écht het admin-adres is.
+        if admin_auth.is_admin_email(email):
+            code = admin_auth.create_admin_otp()
+            mail.send_admin_otp_email(code)
+            app.logger.info("Admin OTP requested for %s", email)
+        else:
+            app.logger.warning("Admin login attempt with wrong email: %s", email)
+        # Zelfde response voor goed of fout, zodat aanvallers niet kunnen
+        # ontdekken welk e-mailadres de admin is.
+        return redirect(url_for("admin_verify"))
+
+    return render_template("admin/login.html")
+
+
+@app.route("/admin/verify", methods=["GET", "POST"])
+def admin_verify():
+    """Stap 2: OTP-code uit de mail invoeren."""
+    if request.method == "POST":
+        code = request.form.get("code", "").strip()
+        if not admin_auth.verify_admin_otp(code):
+            return render_template(
+                "admin/verify.html",
+                error="Code klopt niet of is verlopen. Vraag een nieuwe code aan via /admin/login.",
+            )
+        # OTP goed: zet de tussen-cookie en stuur naar password-stap
+        response = make_response(redirect(url_for("admin_password")))
+        return admin_auth.set_otp_passed_cookie(response)
+
+    return render_template("admin/verify.html")
+
+
+@app.route("/admin/password", methods=["GET", "POST"])
+def admin_password():
+    """Stap 3: wachtwoord. Vereist dat OTP-stap geslaagd is."""
+    if not admin_auth.has_otp_passed():
+        return redirect(url_for("admin_login"))
+
+    if request.method == "POST":
+        password = request.form.get("password", "")
+        if not admin_auth.verify_admin_password(password):
+            app.logger.warning("Admin wachtwoord-poging mislukt")
+            return render_template(
+                "admin/password.html",
+                error="Wachtwoord klopt niet. Probeer opnieuw of vraag een nieuwe code aan.",
+            )
+        # Beide factoren goed: geef volle admin sessie + ruim otp-cookie op
+        response = make_response(redirect(url_for("admin_dashboard")))
+        admin_auth.clear_otp_passed_cookie(response)
+        admin_auth.set_admin_session_cookie(response)
+        app.logger.info("Admin login compleet voor %s", admin_auth.ADMIN_EMAIL)
+        return response
+
+    return render_template("admin/password.html")
+
+
+@app.route("/admin/logout", methods=["POST"])
+def admin_logout():
+    response = make_response(redirect(url_for("admin_login")))
+    return admin_auth.clear_admin_session_cookie(response)
+
+
+@app.route("/admin/dashboard")
+@admin_auth.require_admin
+def admin_dashboard():
+    """Stats + recent activity overzicht."""
+    stats = db.admin_stats()
+    top_uploaders = db.list_top_uploaders(limit=8)
+    weekly = db.uploads_per_week(weeks=12)
+    disk_usage = photo_service.directory_size_bytes()
+    return render_template(
+        "admin/dashboard.html",
+        stats=stats,
+        top_uploaders=top_uploaders,
+        weekly=weekly,
+        disk_usage=disk_usage,
+        admin_email=admin_auth.ADMIN_EMAIL,
+    )
+
+
+@app.route("/admin/bewoners", methods=["GET", "POST"])
+@admin_auth.require_admin
+def admin_bewoners():
+    """Lijst van bewoners + add-formulier."""
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        name = request.form.get("name", "").strip() or None
+        if email and "@" in email:
+            db.add_allowed_resident(email, name=name, added_by="admin")
+            app.logger.info("Admin voegde bewoner toe: %s", email)
+        return redirect(url_for("admin_bewoners"))
+
+    bewoners = db.list_allowed_residents()
+    return render_template("admin/bewoners.html", bewoners=bewoners)
+
+
+@app.route("/admin/bewoners/<path:email>/remove", methods=["POST"])
+@admin_auth.require_admin
+def admin_remove_bewoner(email: str):
+    if db.remove_allowed_resident(email):
+        app.logger.info("Admin verwijderde bewoner: %s", email)
+    return redirect(url_for("admin_bewoners"))
+
+
+@app.route("/admin/aanvragen")
+@admin_auth.require_admin
+def admin_aanvragen():
+    """Openstaande toegangsaanvragen met 1-klik goedkeuren/weigeren."""
+    aanvragen = db.list_pending_access_requests()
+    return render_template("admin/aanvragen.html", aanvragen=aanvragen)
+
+
+@app.route("/admin/aanvragen/<int:request_id>/approve", methods=["POST"])
+@admin_auth.require_admin
+def admin_approve_request(request_id: int):
+    req = db.get_access_request(request_id)
+    if not req:
+        abort(404)
+    # Voeg toe aan whitelist
+    full_name = f"{req.get('voornaam', '')} {req.get('achternaam', '')}".strip()
+    db.add_allowed_resident(
+        req["email"], name=full_name or None, added_by="admin"
+    )
+    db.mark_access_request_handled(
+        request_id, new_status="approved", handled_by="admin"
+    )
+    app.logger.info("Admin keurde aanvraag goed voor %s", req["email"])
+    return redirect(url_for("admin_aanvragen"))
+
+
+@app.route("/admin/aanvragen/<int:request_id>/reject", methods=["POST"])
+@admin_auth.require_admin
+def admin_reject_request(request_id: int):
+    req = db.get_access_request(request_id)
+    if not req:
+        abort(404)
+    db.mark_access_request_handled(
+        request_id, new_status="rejected", handled_by="admin"
+    )
+    app.logger.info("Admin weigerde aanvraag voor %s", req["email"])
+    return redirect(url_for("admin_aanvragen"))
+
+
+@app.route("/admin/prullenbak")
+@admin_auth.require_admin
+def admin_prullenbak():
+    """Soft-deleted foto's terugkijken, herstellen of definitief verwijderen."""
+    photos = db.list_soft_deleted_photos(limit=200)
+    return render_template(
+        "admin/prullenbak.html",
+        photos=photos,
+        total=db.count_soft_deleted_photos(),
+    )
+
+
+@app.route("/admin/prullenbak/<int:photo_id>/restore", methods=["POST"])
+@admin_auth.require_admin
+def admin_restore_photo(photo_id: int):
+    if db.restore_photo(photo_id):
+        app.logger.info("Admin herstelde foto %s", photo_id)
+    return redirect(url_for("admin_prullenbak"))
+
+
+@app.route("/admin/prullenbak/<int:photo_id>/purge", methods=["POST"])
+@admin_auth.require_admin
+def admin_purge_photo(photo_id: int):
+    """Hard-delete één foto uit de prullenbak: rij weg, bestanden weg."""
+    deleted = db.hard_delete_photo(photo_id)
+    if deleted:
+        photo_service.delete_files(
+            deleted["filename"], deleted.get("thumb_filename")
+        )
+        app.logger.info("Admin purgede foto %s definitief", photo_id)
+    return redirect(url_for("admin_prullenbak"))
 
 
 # ---------------------------------------------------------------------------
@@ -737,6 +960,37 @@ def remove_bewoner(email: str):
         click.echo(f"  Removed: {email}")
     else:
         click.echo(f"  Not found: {email}")
+
+
+@app.cli.command("gen-admin-password-hash")
+@click.option(
+    "--password",
+    prompt=True,
+    hide_input=True,
+    confirmation_prompt=True,
+    help="Wachtwoord (prompt is hidden, hash wordt geprint).",
+)
+def gen_admin_password_hash(password: str):
+    """Genereer een werkzeug password-hash om in .env te zetten.
+
+    Gebruik:
+        flask gen-admin-password-hash
+        (vul tweemaal het wachtwoord in)
+
+    Kopieer de uitvoer in .env als:
+        ADMIN_PASSWORD_HASH=pbkdf2:sha256:600000$....
+    """
+    if len(password) < 10:
+        click.echo("  Wachtwoord moet minimaal 10 tekens zijn.")
+        return
+    h = generate_password_hash(password, method="pbkdf2:sha256", salt_length=16)
+    click.echo("")
+    click.echo("Voeg deze regel toe aan .env (en aan Coolify environment):")
+    click.echo("")
+    click.echo(f"  ADMIN_PASSWORD_HASH={h}")
+    click.echo("")
+    click.echo("Het plaintext wachtwoord staat nergens opgeslagen, alleen deze hash.")
+    click.echo("")
 
 
 @app.cli.command("gen-qr-token")

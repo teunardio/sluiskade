@@ -114,6 +114,33 @@ def send_otp_email(to_email: str, code: str) -> bool:
     return _send(to_email, subject, html)
 
 
+def send_admin_otp_email(code: str) -> bool:
+    """Stuur de admin OTP-code naar ADMIN_EMAIL.
+    Aparte template zodat het duidelijk een admin-mail is, niet bewoner."""
+    subject = f"Admin-inlogcode Sluiskade: {code}"
+    html = f"""<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <style>{_BASE_STYLE}</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="brand" style="color: #b45309;">Sluiskade Admin</div>
+      <h1>Admin-login (stap 1 van 2)</h1>
+      <p>Iemand probeert in te loggen op het admin-paneel. Hieronder de eenmalige code:</p>
+      <div class="code">{code}</div>
+      <p>Na deze code moet er ook nog een wachtwoord ingevoerd worden. Heb jij dit niet aangevraagd, negeer dan deze mail · zonder het wachtwoord komt niemand binnen.</p>
+      <p style="color: #64748b; font-size: 13px;">Code is 15 minuten geldig en kan maar een keer gebruikt worden.</p>
+    </div>
+    <div class="footer">Sluiskade Admin &middot; <a href="{PUBLIC_BASE_URL}/admin" style="color: #0ea5e9;">sluiskade.com/admin</a></div>
+  </div>
+</body>
+</html>"""
+    return _send(ADMIN_EMAIL, subject, html)
+
+
 def send_access_request_notification(req: dict) -> bool:
     """Notify ADMIN_EMAIL of a new toegangsaanvraag."""
     subject = f"Nieuwe toegangsaanvraag Sluiskade: {req.get('email')}"

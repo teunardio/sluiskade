@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Bewoners, Sluiskade Admin</title>
+  {% include "_head_meta.html" %}
+  <style>
+    :root { --ink:#0f172a; --soft:#1e293b; --softer:#334155; --amber:#f59e0b; --muted:#94a3b8; }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #f1f5f9;
+      background: #0a0f1f;
+    }
+    .stage { padding: 2rem 1.5rem 4rem; max-width: 64rem; margin: 0 auto; }
+    header.page { margin-bottom: 1.5rem; }
+    h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 0.3rem; color: white; }
+    header.page p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+
+    .panel {
+      background: var(--soft);
+      border: 1px solid var(--softer);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .panel-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: white;
+      margin: 0 0 1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Add form */
+    .add-form {
+      display: grid;
+      grid-template-columns: 2fr 1fr auto;
+      gap: 0.5rem;
+    }
+    @media (max-width: 640px) {
+      .add-form { grid-template-columns: 1fr; }
+    }
+    .add-form input {
+      padding: 0.7rem 0.9rem;
+      background: #0f172a;
+      border: 1px solid var(--softer);
+      border-radius: 0.5rem;
+      color: white;
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+    }
+    .add-form input:focus {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+    }
+    .add-form button {
+      padding: 0.7rem 1.25rem;
+      background: var(--amber);
+      color: var(--ink);
+      font-weight: 700;
+      font-size: 0.88rem;
+      font-family: inherit;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+    .add-form button:hover { background: #fbbf24; }
+
+    /* List */
+    .bewoner-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.85rem 0;
+      border-bottom: 1px solid #1e293b;
+    }
+    .bewoner-row:last-child { border-bottom: none; }
+    .avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.88rem;
+      flex-shrink: 0;
+    }
+    .bewoner-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .bewoner-name {
+      font-weight: 600;
+      color: white;
+      font-size: 0.9rem;
+      margin: 0 0 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .bewoner-email {
+      color: var(--muted);
+      font-size: 0.78rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .bewoner-meta {
+      color: var(--muted);
+      font-size: 0.72rem;
+      margin-right: 0.5rem;
+      white-space: nowrap;
+    }
+    .delete-btn {
+      background: rgba(220, 38, 38, 0.1);
+      color: #fca5a5;
+      border: 1px solid rgba(252, 165, 165, 0.2);
+      border-radius: 0.5rem;
+      padding: 0.45rem 0.7rem;
+      font-size: 0.78rem;
+      font-family: inherit;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: all 0.15s ease;
+    }
+    .delete-btn:hover {
+      background: rgba(220, 38, 38, 0.25);
+      color: #fee2e2;
+    }
+    .empty {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+  </style>
+</head>
+<body>
+  {% from "_icons.html" import icon %}
+  {% from "admin/_topbar.html" import admin_topbar %}
+
+  {{ admin_topbar(current='bewoners') }}
+
+  <main class="stage">
+    <header class="page">
+      <h1>Bewoners</h1>
+      <p>{{ bewoners | length }} {{ 'bewoner' if bewoners|length == 1 else 'bewoners' }} hebben toegang tot het portaal.</p>
+    </header>
+
+    <div class="panel">
+      <h2 class="panel-title">
+        {{ icon("plus", size=18, stroke=2) }} Voeg een bewoner toe
+      </h2>
+      <form class="add-form" method="post" action="{{ url_for('admin_bewoners') }}">
+        <input type="email" name="email" required placeholder="email@adres.nl" autocomplete="off" />
+        <input type="text" name="name" placeholder="Naam (optioneel)" autocomplete="off" />
+        <button type="submit">
+          {{ icon("plus", size=14, stroke=2.5) }} Toevoegen
+        </button>
+      </form>
+    </div>
+
+    <div class="panel">
+      <h2 class="panel-title">
+        {{ icon("users", size=18, stroke=2) }} Toegestane e-mailadressen
+      </h2>
+      {% if bewoners %}
+        {% for b in bewoners %}
+        <div class="bewoner-row">
+          <div class="avatar">{{ (b.name or b.email)[0] | upper }}</div>
+          <div class="bewoner-info">
+            <div class="bewoner-name">{{ b.name or '(geen naam)' }}</div>
+            <div class="bewoner-email">{{ b.email }}</div>
+          </div>
+          <div class="bewoner-meta">Sinds {{ b.added_at[:10] }}</div>
+          <form method="post" action="{{ url_for('admin_remove_bewoner', email=b.email) }}"
+                onsubmit="return confirm('{{ b.email }} verwijderen? Ze kunnen daarna niet meer inloggen.');"
+                style="margin: 0;">
+            <button class="delete-btn" type="submit">
+              {{ icon("trash", size=12, stroke=2) }} Verwijder
+            </button>
+          </form>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty">Nog geen bewoners op de lijst. Voeg de eerste hierboven toe.</div>
+      {% endif %}
+    </div>
+  </main>
+</body>
+</html>

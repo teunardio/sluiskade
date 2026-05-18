@@ -245,3 +245,20 @@ def delete_files(filename: str, thumb_filename: Optional[str]) -> None:
                 os.remove(path)
             except OSError:
                 pass
+
+
+def directory_size_bytes() -> int:
+    """Som van alle bestanden in PHOTOS_DIR + THUMBS_DIR.
+    Gebruikt door admin-dashboard om disk-gebruik te tonen.
+    Lekker simpel: één os.walk per dir, geen recursie-acrobatiek."""
+    total = 0
+    for base in (PHOTOS_DIR, THUMBS_DIR):
+        if not os.path.isdir(base):
+            continue
+        for entry in os.scandir(base):
+            try:
+                if entry.is_file():
+                    total += entry.stat().st_size
+            except OSError:
+                continue
+    return total

@@ -3,7 +3,7 @@
 Een kleine Flask-app voor het delen van bouwfoto's van een woningbouwproject aan de Sluiskade. Sluiswachters van de naastgelegen sluis schieten foto's vanuit het sluiswachtershuis en uploaden die via een QR-code; toekomstige bewoners loggen in met een magic link en zien hoe hun huis vorm krijgt.
 
 **Live op:** [sluiskade.com](https://sluiskade.com)
-**Stack:** Flask · SQLite · Pillow · Resend · Authentik · Docker · Coolify
+**Stack:** Flask · SQLite · Pillow · Resend · Docker · Coolify
 
 ---
 
@@ -16,7 +16,7 @@ Eén Flask-app, één SQLite-database, één foto-volume, met vier ingangen:
 | `/` | Iedereen | Publieke community one-pager |
 | `/portaal` | Toekomstige bewoners | Magic link (e-mail OTP via Resend) |
 | `/sluis` | Sluiswachters van de sluis ernaast | HMAC-getekend token in QR-code |
-| `/admin` | Beheerder | Authentik SSO (OIDC) |
+| `/admin` | Beheerder | Magic link + wachtwoord (2FA) |
 
 Gehost op de droog.cloud stack (Contabo VPS + Coolify + Traefik + Let's Encrypt). Foto's worden gecomprimeerd, EXIF-GPS gestript, op een persistent Docker-volume opgeslagen en meegenomen in de nightly backup.
 
@@ -28,7 +28,7 @@ Wat ik **niet** doe is issues en pull requests aannemen. Zie [`CONTRIBUTING.md`]
 
 ## Veiligheid
 
-Alle secrets (HMAC-keys, API-tokens, OIDC-credentials, session-keys) leven uitsluitend in environment variables op de productie-omgeving. Niets gevoeligs staat in deze repo. De `.env.example` toont welke variabelen verwacht worden, met dummy waardes. Zie ook [`SECURITY.md`](SECURITY.md).
+Alle secrets (HMAC-keys, API-tokens, password-hashes, session-keys) leven uitsluitend in environment variables op de productie-omgeving. Niets gevoeligs staat in deze repo. De `.env.example` toont welke variabelen verwacht worden, met dummy waardes. Zie ook [`SECURITY.md`](SECURITY.md).
 
 ## Licentie
 

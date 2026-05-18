@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Timelapse, Sluiskade</title>
+  {% include "_head_meta.html" %}
+
+  <style>
+    :root {
+      --water: #0ea5e9;
+      --muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #f1f5f9;
+      background: #0a0f1f;
+      overflow: hidden;
+    }
+
+    .stage {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top bar: brand + exit */
+    .tl-topbar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+      z-index: 10;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
+    }
+    .tl-brand {
+      font-weight: 700;
+      color: white;
+      text-decoration: none;
+      font-size: 1rem;
+      opacity: 0.9;
+    }
+    .tl-brand span { color: var(--water); font-weight: 400; }
+    .tl-exit {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 0.9rem 0.5rem 0.7rem;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      text-decoration: none;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: background 0.15s ease;
+    }
+    .tl-exit:hover { background: rgba(255,255,255,0.2); }
+
+    /* Main photo area */
+    .tl-canvas {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .tl-slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+      padding: 4rem 2rem 6rem;
+    }
+    .tl-slide.active {
+      opacity: 1;
+    }
+    .tl-slide img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 0.5rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      animation: kenburns 8s ease-in-out forwards;
+    }
+    @keyframes kenburns {
+      from { transform: scale(1) translateY(0); }
+      to   { transform: scale(1.05) translateY(-1%); }
+    }
+
+    /* Caption overlay */
+    .tl-caption {
+      position: absolute;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(8px);
+      color: white;
+      padding: 0.6rem 1.1rem;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      max-width: calc(100vw - 4rem);
+      text-align: center;
+      z-index: 5;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .tl-caption.visible { opacity: 1; }
+
+    /* Controls bar */
+    .tl-controls {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 1rem 1.5rem 1.5rem;
+      background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+      z-index: 10;
+    }
+    .tl-progress {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 0.85rem;
+    }
+    .tl-progress-fill {
+      height: 100%;
+      background: var(--water);
+      width: 0%;
+      transition: width 0.25s linear;
+    }
+    .tl-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .tl-date {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .tl-buttons {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .tl-btn {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.1s ease;
+      padding: 0;
+    }
+    .tl-btn:hover { background: rgba(255,255,255,0.2); }
+    .tl-btn:active { transform: scale(0.95); }
+    .tl-btn.primary {
+      background: var(--water);
+      width: 44px;
+      height: 44px;
+    }
+    .tl-btn.primary:hover { background: #38bdf8; }
+
+    .tl-speed {
+      display: inline-flex;
+      gap: 2px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 999px;
+      padding: 3px;
+      margin-left: 0.4rem;
+    }
+    .tl-speed button {
+      background: transparent;
+      color: white;
+      border: none;
+      padding: 0.35rem 0.7rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      font-family: inherit;
+      border-radius: 999px;
+      cursor: pointer;
+      opacity: 0.65;
+    }
+    .tl-speed button.active {
+      background: rgba(255,255,255,0.18);
+      opacity: 1;
+    }
+
+    .tl-counter {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      margin-left: 0.5rem;
+    }
+
+    /* Empty state */
+    .tl-empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+    }
+    .tl-empty h2 { color: white; margin: 0 0 0.5rem; font-size: 1.4rem; }
+    .tl-empty a {
+      margin-top: 1.5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.7rem 1.4rem;
+      background: var(--water);
+      color: white;
+      text-decoration: none;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .tl-slide img { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  {% from "_icons.html" import icon %}
+
+  <div class="stage">
+    <div class="tl-topbar">
+      <a class="tl-brand" href="{{ url_for('portaal_index') }}">Sluis<span>kade</span> &middot; Timelapse</a>
+      <a class="tl-exit" href="{{ url_for('portaal_index') }}">
+        {{ icon("x", size=18, stroke=2.5) }}
+        Sluiten
+      </a>
+    </div>
+
+    {% if photos %}
+      <div class="tl-canvas" id="canvas">
+        {% for photo in photos %}
+          <div class="tl-slide {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}">
+            <img src="{{ url_for('serve_photo', photo_id=photo.id) }}" alt="" />
+          </div>
+        {% endfor %}
+        <div class="tl-caption" id="caption"></div>
+      </div>
+
+      <div class="tl-controls">
+        <div class="tl-progress">
+          <div class="tl-progress-fill" id="progress"></div>
+        </div>
+        <div class="tl-row">
+          <div>
+            <span class="tl-date" id="dateLabel">&nbsp;</span>
+            <span class="tl-counter" id="counter">1 / {{ total }}</span>
+          </div>
+          <div class="tl-buttons">
+            <button class="tl-btn" id="prevBtn" aria-label="Vorige">{{ icon("arrow-left", size=18, stroke=2.5) }}</button>
+            <button class="tl-btn primary" id="playBtn" aria-label="Pauzeren">{{ icon("pause", size=20, stroke=0) }}</button>
+            <button class="tl-btn" id="nextBtn" aria-label="Volgende">{{ icon("arrow-right", size=18, stroke=2.5) }}</button>
+            <div class="tl-speed" role="group" aria-label="Snelheid">
+              <button data-speed="1" class="active">1x</button>
+              <button data-speed="2">2x</button>
+              <button data-speed="4">4x</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script type="application/json" id="photoData">{
+        "photos": [
+          {%- for p in photos -%}
+            {"id": {{ p.id | tojson }}, "date": {{ p.uploaded_at[:10] | tojson }}, "caption": {{ (p.caption or "") | tojson }}}{% if not loop.last %},{% endif %}
+          {%- endfor -%}
+        ]
+      }</script>
+    {% else %}
+      <div class="tl-empty">
+        <h2>Nog geen foto's om te tonen</h2>
+        <p>Zodra er foto's geüpload zijn kun je hier de timelapse starten.</p>
+        <a href="{{ url_for('portaal_index') }}">{{ icon("arrow-left", size=16, stroke=2.5) }} Terug</a>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if photos %}
+  <script>
+    (function() {
+      const data = JSON.parse(document.getElementById('photoData').textContent);
+      const photos = data.photos;
+      const slides = Array.from(document.querySelectorAll('.tl-slide'));
+      const progressEl = document.getElementById('progress');
+      const dateLabel = document.getElementById('dateLabel');
+      const counter = document.getElementById('counter');
+      const captionEl = document.getElementById('caption');
+      const playBtn = document.getElementById('playBtn');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const speedButtons = document.querySelectorAll('.tl-speed button');
+
+      let idx = 0;
+      let playing = true;
+      let speed = 1;            // 1x | 2x | 4x
+      const baseDuration = 2400; // ms per slide at 1x
+      let timer = null;
+      let progressTimer = null;
+
+      const monthNames = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+      function formatDate(iso) {
+        const [y, m, d] = iso.split('-').map(Number);
+        return `${d} ${monthNames[m - 1]} ${y}`;
+      }
+
+      function showSlide(i) {
+        slides.forEach(s => s.classList.remove('active'));
+        slides[i].classList.add('active');
+        dateLabel.textContent = formatDate(photos[i].date);
+        counter.textContent = `${i + 1} / ${photos.length}`;
+        if (photos[i].caption) {
+          captionEl.textContent = photos[i].caption;
+          captionEl.classList.add('visible');
+        } else {
+          captionEl.classList.remove('visible');
+        }
+        // Restart ken-burns by cloning the img element
+        const img = slides[i].querySelector('img');
+        if (img) {
+          img.style.animation = 'none';
+          // Trigger reflow then re-add animation
+          void img.offsetWidth;
+          img.style.animation = '';
+        }
+      }
+
+      function advance(step) {
+        idx = (idx + step + photos.length) % photos.length;
+        showSlide(idx);
+        restartProgress();
+      }
+
+      function restartProgress() {
+        clearTimeout(timer);
+        clearInterval(progressTimer);
+        progressEl.style.width = '0%';
+        if (!playing) return;
+        const duration = baseDuration / speed;
+        const start = Date.now();
+        progressTimer = setInterval(() => {
+          const elapsed = Date.now() - start;
+          const pct = Math.min(100, (elapsed / duration) * 100);
+          progressEl.style.width = pct + '%';
+          if (pct >= 100) clearInterval(progressTimer);
+        }, 50);
+        timer = setTimeout(() => advance(1), duration);
+      }
+
+      function setPlaying(p) {
+        playing = p;
+        playBtn.innerHTML = p
+          ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'
+          : '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
+        playBtn.setAttribute('aria-label', p ? 'Pauzeren' : 'Afspelen');
+        if (p) restartProgress();
+        else {
+          clearTimeout(timer);
+          clearInterval(progressTimer);
+        }
+      }
+
+      playBtn.addEventListener('click', () => setPlaying(!playing));
+      prevBtn.addEventListener('click', () => advance(-1));
+      nextBtn.addEventListener('click', () => advance(1));
+
+      speedButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          speedButtons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          speed = parseInt(btn.dataset.speed, 10);
+          if (playing) restartProgress();
+        });
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === ' ') { e.preventDefault(); setPlaying(!playing); }
+        else if (e.key === 'ArrowLeft')  advance(-1);
+        else if (e.key === 'ArrowRight') advance(1);
+        else if (e.key === 'Escape') window.location.href = "{{ url_for('portaal_index') }}";
+      });
+
+      // Kick off
+      showSlide(0);
+      restartProgress();
+    })();
+  </script>
+  {% endif %}
+
+</body>
+</html>

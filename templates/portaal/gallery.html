@@ -196,6 +196,66 @@
       transform: scale(0.85);
       pointer-events: none;
     }
+
+    /* Like button - bottom-right pill */
+    .like-btn {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 4px 8px;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(6px);
+      color: white;
+      border: none;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      z-index: 2;
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+    .like-btn:hover { background: rgba(15, 23, 42, 0.75); transform: scale(1.05); }
+    .like-btn:active { transform: scale(0.95); }
+    .like-btn.liked {
+      background: rgba(220, 38, 38, 0.85);
+      color: #fee2e2;
+    }
+    .like-btn .count {
+      font-variant-numeric: tabular-nums;
+      min-width: 0.5ch;
+    }
+    .like-btn .count:empty { display: none; }
+    .like-btn .count:empty + svg,
+    .like-btn:not(:has(.count:not(:empty))) { padding-right: 6px; }
+
+    /* Caption peek - subtle bottom band, hover to reveal */
+    .caption-peek {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 1.2rem 0.7rem 0.6rem;
+      background: linear-gradient(to top, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0));
+      color: white;
+      font-size: 0.78rem;
+      line-height: 1.3;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      pointer-events: none;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .thumb:hover .caption-peek {
+      opacity: 1;
+      transform: translateY(0);
+    }
   </style>
 </head>
 <body>
@@ -225,7 +285,14 @@
               {% elif photo.source == 'bewoner' %}
                 <span class="source-tag">{% if is_mine %}Jij{% else %}Buur{% endif %}</span>
               {% endif %}
+              {% if photo.caption %}
+                <div class="caption-peek">{{ photo.caption }}</div>
+              {% endif %}
             </a>
+            <button type="button" class="like-btn {% if photo.liked_by_me %}liked{% endif %}" data-photo-id="{{ photo.id }}" aria-label="Liken">
+              {{ icon("heart-filled" if photo.liked_by_me else "heart", size=12, stroke=2) }}
+              <span class="count">{% if photo.like_count and photo.like_count > 0 %}{{ photo.like_count }}{% endif %}</span>
+            </button>
             {% if is_mine %}
               <button type="button" class="trash-btn" aria-label="Mijn foto verwijderen">
                 {{ icon("trash", size=14, stroke=2) }}
@@ -317,6 +384,33 @@
         if (!e.target.closest('.thumb.confirming')) {
           cancelAllConfirms();
         }
+      });
+
+      // Like button toggle (works for both anonymous and own photos)
+      document.querySelectorAll('.like-btn').forEach(btn => {
+        btn.addEventListener('click', async e => {
+          e.preventDefault();
+          e.stopPropagation();
+          const photoId = btn.dataset.photoId;
+          btn.disabled = true;
+          try {
+            const resp = await fetch('/portaal/foto/' + photoId + '/like', {
+              method: 'POST',
+              headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const data = await resp.json();
+            if (resp.ok) {
+              btn.classList.toggle('liked', data.liked);
+              btn.querySelector('.count').textContent = data.count > 0 ? data.count : '';
+              const svg = btn.querySelector('svg');
+              if (svg) svg.outerHTML = data.liked
+                ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'
+                : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
+            }
+          } finally {
+            btn.disabled = false;
+          }
+        });
       });
     })();
   </script>

@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Bewonersportaal, Sluiskade</title>
+  {% include "_head_meta.html" %}
+
+  <style>
+    :root {
+      --deep:  #0c4a6e;
+      --water: #0ea5e9;
+      --foam:  #e0f2fe;
+      --ink:   #0f172a;
+      --paper: #f8fafc;
+      --muted: #64748b;
+      --soft:  #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, var(--foam) 0%, var(--paper) 60%, #ffffff 100%);
+    }
+
+    .stage {
+      padding: 2.5rem 1.5rem 4rem;
+      max-width: 56rem;
+      margin: 0 auto;
+    }
+
+    /* HERO */
+    .greet {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .wave-mark { color: var(--water); margin: 0 auto 1rem; display: block; }
+    h1 {
+      font-size: clamp(1.85rem, 5vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--deep);
+      margin: 0 0 0.4rem;
+      line-height: 1.15;
+    }
+    .greet p {
+      font-size: 1rem;
+      color: var(--muted);
+      margin: 0;
+      max-width: 32rem;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    /* STATS */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.85rem;
+      margin-bottom: 2.5rem;
+    }
+    @media (min-width: 640px) {
+      .stats { grid-template-columns: repeat(4, 1fr); }
+    }
+    .stat {
+      background: var(--soft);
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      padding: 1.1rem 1rem;
+      text-align: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .stat:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px -10px rgba(12, 74, 110, 0.25);
+    }
+    .stat-num {
+      display: block;
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: var(--deep);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .stat-label {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.45rem;
+      font-weight: 500;
+    }
+
+    /* LATEST */
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .section-head h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--deep);
+      margin: 0;
+    }
+    .section-head a {
+      font-size: 0.88rem;
+      color: var(--water);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .section-head a:hover { text-decoration: underline; }
+
+    .latest-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.6rem;
+      margin-bottom: 2.5rem;
+    }
+    @media (min-width: 520px) {
+      .latest-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    .latest-thumb {
+      aspect-ratio: 1;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      background: var(--paper);
+      border: 1px solid #e2e8f0;
+      transition: transform 0.25s ease;
+    }
+    .latest-thumb:hover { transform: translateY(-3px); }
+    .latest-thumb img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .latest-empty {
+      grid-column: 1 / -1;
+      padding: 2rem;
+      text-align: center;
+      background: white;
+      border: 1px dashed #cbd5e1;
+      border-radius: 1rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    /* QUICK ACCESS CARDS */
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.85rem;
+    }
+    @media (min-width: 640px) {
+      .cards { grid-template-columns: repeat(2, 1fr); }
+    }
+    .card {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.25rem;
+      background: var(--soft);
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      text-decoration: none;
+      color: var(--ink);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px -16px rgba(12, 74, 110, 0.3);
+      border-color: var(--water);
+    }
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--foam);
+      color: var(--water);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .card-text {
+      flex: 1;
+    }
+    .card-title {
+      font-weight: 600;
+      color: var(--deep);
+      margin: 0 0 0.2rem;
+      font-size: 0.98rem;
+    }
+    .card-sub {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.4;
+    }
+    .card-arrow {
+      color: var(--muted);
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+    .card:hover .card-arrow {
+      transform: translateX(3px);
+      color: var(--water);
+    }
+  </style>
+</head>
+<body>
+  {% from "_icons.html" import icon %}
+  {% from "portaal/_topbar.html" import topbar %}
+
+  {{ topbar(email) }}
+
+  <main class="stage">
+    <div class="greet">
+      {{ icon("wave-decoration", class="wave-mark") }}
+      <h1>Welkom terug.</h1>
+      <p>Je bent ingelogd als <strong>{{ email }}</strong>. Hieronder de stand van zaken.</p>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-num">{{ stats.total }}</span>
+        <span class="stat-label">{% if stats.total == 1 %}Foto in de buurt{% else %}Foto's in de buurt{% endif %}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">{{ own_count }}</span>
+        <span class="stat-label">{% if own_count == 1 %}Jouw bijdrage{% else %}Jouw bijdragen{% endif %}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">{{ stats.this_week }}</span>
+        <span class="stat-label">Deze week</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">{{ stats.days_since_first }}</span>
+        <span class="stat-label">{% if stats.days_since_first == 1 %}Dag sinds de start{% else %}Dagen sinds de start{% endif %}</span>
+      </div>
+    </div>
+
+    {% if latest %}
+    <div class="section-head">
+      <h2>Net binnengekomen</h2>
+      <a href="{{ url_for('portaal_gallery') }}">Bekijk alles</a>
+    </div>
+    <div class="latest-grid">
+      {% for photo in latest %}
+        <a class="latest-thumb" href="{{ url_for('portaal_view_photo', photo_id=photo.id) }}">
+          <img src="{{ url_for('serve_thumb', photo_id=photo.id) }}" alt="" loading="lazy" />
+        </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="latest-grid">
+      <div class="latest-empty">Nog geen foto's. Wees de eerste en upload er een via de knop hieronder.</div>
+    </div>
+    {% endif %}
+
+    <div class="section-head">
+      <h2>Wat wil je doen?</h2>
+    </div>
+    <div class="cards">
+      <a class="card" href="{{ url_for('portaal_gallery') }}">
+        <span class="card-icon">{{ icon("grid", size=22, stroke=2) }}</span>
+        <div class="card-text">
+          <p class="card-title">Galerij</p>
+          <p class="card-sub">Alle foto's in een raster, hartjes en captions zichtbaar.</p>
+        </div>
+        <span class="card-arrow">{{ icon("arrow-right", size=18, stroke=2) }}</span>
+      </a>
+
+      <a class="card" href="{{ url_for('portaal_tijdlijn') }}">
+        <span class="card-icon">{{ icon("calendar", size=22, stroke=2) }}</span>
+        <div class="card-text">
+          <p class="card-title">Tijdlijn</p>
+          <p class="card-sub">Chronologisch per dag, zie ritme en mijlpalen.</p>
+        </div>
+        <span class="card-arrow">{{ icon("arrow-right", size=18, stroke=2) }}</span>
+      </a>
+
+      <a class="card" href="{{ url_for('portaal_timelapse') }}">
+        <span class="card-icon">{{ icon("play", size=22, stroke=2) }}</span>
+        <div class="card-text">
+          <p class="card-title">Timelapse</p>
+          <p class="card-sub">Slideshow vanaf de eerste foto. Zie de bouw groeien.</p>
+        </div>
+        <span class="card-arrow">{{ icon("arrow-right", size=18, stroke=2) }}</span>
+      </a>
+
+      <a class="card" href="{{ url_for('portaal_upload') }}">
+        <span class="card-icon">{{ icon("upload-cloud", size=22, stroke=2) }}</span>
+        <div class="card-text">
+          <p class="card-title">Foto plaatsen</p>
+          <p class="card-sub">Loop je langs? Schiet en upload, eventueel met een korte beschrijving.</p>
+        </div>
+        <span class="card-arrow">{{ icon("arrow-right", size=18, stroke=2) }}</span>
+      </a>
+
+      {% if stats.total > 0 %}
+      <a class="card" href="{{ url_for('portaal_download_all') }}" style="grid-column: 1 / -1;">
+        <span class="card-icon">{{ icon("download", size=22, stroke=2) }}</span>
+        <div class="card-text">
+          <p class="card-title">Download alles als ZIP</p>
+          <p class="card-sub">Een archief met alle {{ stats.total }} foto's. Handig voor offline bewaren.</p>
+        </div>
+        <span class="card-arrow">{{ icon("arrow-down", size=18, stroke=2) }}</span>
+      </a>
+      {% endif %}
+    </div>
+  </main>
+
+</body>
+</html>

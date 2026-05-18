@@ -1,16 +1,34 @@
 {#
-   Portaal tab-strip: Galerij / Uploaden segmented control.
+   Portaal tab-strip: Galerij / Tijdlijn / Timelapse / Uploaden.
    Usage:
        {% from "portaal/_tabs.html" import tabs %}
-       {{ tabs(current='gallery') }}   OR   {{ tabs(current='upload') }}
+       {{ tabs(current='gallery') }}
+   current can be 'gallery', 'tijdlijn', 'timelapse', or 'upload'.
 #}
 
 {% macro tabs(current) %}
+{% from "_icons.html" import icon %}
 <nav class="portaal-tabs" aria-label="Sectie navigatie">
   <a class="portaal-tab {% if current == 'gallery' %}active{% endif %}"
-     href="{{ url_for('portaal_gallery') }}">Galerij</a>
+     href="{{ url_for('portaal_gallery') }}">
+    {{ icon("grid", size=14, stroke=2) }}
+    <span>Galerij</span>
+  </a>
+  <a class="portaal-tab {% if current == 'tijdlijn' %}active{% endif %}"
+     href="{{ url_for('portaal_tijdlijn') }}">
+    {{ icon("calendar", size=14, stroke=2) }}
+    <span>Tijdlijn</span>
+  </a>
+  <a class="portaal-tab {% if current == 'timelapse' %}active{% endif %}"
+     href="{{ url_for('portaal_timelapse') }}">
+    {{ icon("play", size=14, stroke=2) }}
+    <span>Timelapse</span>
+  </a>
   <a class="portaal-tab {% if current == 'upload' %}active{% endif %}"
-     href="{{ url_for('portaal_upload') }}">Uploaden</a>
+     href="{{ url_for('portaal_upload') }}">
+    {{ icon("upload-cloud", size=14, stroke=2) }}
+    <span>Uploaden</span>
+  </a>
 </nav>
 
 <style>
@@ -23,17 +41,27 @@
     border-radius: 999px;
     margin: 0 auto 1.75rem;
     width: fit-content;
+    max-width: calc(100vw - 2rem);
+    overflow-x: auto;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    scrollbar-width: none;
   }
+  .portaal-tabs::-webkit-scrollbar { display: none; }
   .portaal-tab {
-    padding: 0.5rem 1.25rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
     border-radius: 999px;
     color: #64748b;
     text-decoration: none;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     font-weight: 500;
     transition: background 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
+  .portaal-tab svg { flex-shrink: 0; }
   .portaal-tab:hover { color: #0c4a6e; }
   .portaal-tab.active {
     background: #0ea5e9;

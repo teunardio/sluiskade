@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS photos (
     width           INTEGER,
     height          INTEGER,
     file_size       INTEGER,
+    caption         TEXT,
     uploaded_at     TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at      TEXT,
     deleted_by      TEXT,
@@ -44,6 +45,19 @@ CREATE TABLE IF NOT EXISTS photos (
 CREATE INDEX IF NOT EXISTS idx_photos_uploaded ON photos(uploaded_at DESC);
 CREATE INDEX IF NOT EXISTS idx_photos_deleted  ON photos(deleted_at);
 CREATE INDEX IF NOT EXISTS idx_photos_source   ON photos(source);
+
+
+CREATE TABLE IF NOT EXISTS photo_likes (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    photo_id        INTEGER NOT NULL,
+    bewoner_email   TEXT    NOT NULL COLLATE NOCASE,
+    liked_at        TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(photo_id, bewoner_email),
+    FOREIGN KEY (photo_id) REFERENCES photos(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_likes_photo ON photo_likes(photo_id);
+CREATE INDEX IF NOT EXISTS idx_likes_email ON photo_likes(bewoner_email);
 
 
 CREATE TABLE IF NOT EXISTS allowed_residents (
@@ -111,13 +125,23 @@ def get_db() -> Iterator[sqlite3.Connection]:
 def init_db() -> None:
     """Create tables and indexes if they don't exist yet. Idempotent.
 
-    Also flips the database to WAL journal mode on first run · that's a
+    Also flips the database to WAL journal mode on first run, that's a
     persistent file-level setting so we only need to do it once.
+    Runs lightweight column migrations afterwards.
     """
     with get_db() as conn:
         # WAL is persisted on the DB file itself; safe to set repeatedly.
         conn.execute("PRAGMA journal_mode = WAL")
         conn.executescript(SCHEMA)
+        _apply_migrations(conn)
+
+
+def _apply_migrations(conn: sqlite3.Connection) -> None:
+    """Add columns introduced after the initial table creation.
+    SQLite has no IF NOT EXISTS for columns, so we check pragma first."""
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(photos)").fetchall()}
+    if "caption" not in cols:
+        conn.execute("ALTER TABLE photos ADD COLUMN caption TEXT")
 
 
 # ---------------------------------------------------------------------------
@@ -133,6 +157,7 @@ def insert_photo(
     width: Optional[int] = None,
     height: Optional[int] = None,
     file_size: Optional[int] = None,
+    caption: Optional[str] = None,
 ) -> int:
     """Insert a row and return the new photo id."""
     with get_db() as conn:
@@ -140,11 +165,11 @@ def insert_photo(
             """
             INSERT INTO photos
                 (filename, thumb_filename, source, uploader_email,
-                 width, height, file_size)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+                 width, height, file_size, caption)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (filename, thumb_filename, source, uploader_email,
-             width, height, file_size),
+             width, height, file_size, caption),
         )
         return cur.lastrowid
 
@@ -197,6 +222,159 @@ def soft_delete_photo(
             (deleted_by, reason, photo_id),
         )
         return cur.rowcount > 0
+
+
+def random_visible_photo_id() -> Optional[int]:
+    """Pick a random non-deleted photo id, or None if none exist."""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT id FROM photos WHERE deleted_at IS NULL "
+            "ORDER BY RANDOM() LIMIT 1"
+        ).fetchone()
+        return row["id"] if row else None
+
+
+def list_photos_for_timeline(*, limit: int = 500) -> list[dict]:
+    """All non-deleted photos with their like counts, newest first.
+    Used by the timeline + timelapse views which need everything in one
+    call without pagination overhead."""
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT p.*, COALESCE(l.cnt, 0) AS like_count
+            FROM photos p
+            LEFT JOIN (
+                SELECT photo_id, COUNT(*) AS cnt
+                FROM photo_likes
+                GROUP BY photo_id
+            ) l ON l.photo_id = p.id
+            WHERE p.deleted_at IS NULL
+            ORDER BY p.uploaded_at DESC, p.id DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def list_photos_with_likes(
+    *, limit: int = 200, viewer_email: Optional[str] = None
+) -> list[dict]:
+    """Same as list_photos but joined with like_count and 'liked_by_me'
+    so the gallery can render hearts in one round-trip."""
+    viewer = (viewer_email or "").strip().lower()
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT p.*,
+                   COALESCE(l.cnt, 0)              AS like_count,
+                   CASE WHEN m.id IS NULL THEN 0 ELSE 1 END AS liked_by_me
+            FROM photos p
+            LEFT JOIN (
+                SELECT photo_id, COUNT(*) AS cnt
+                FROM photo_likes GROUP BY photo_id
+            ) l ON l.photo_id = p.id
+            LEFT JOIN photo_likes m
+                   ON m.photo_id = p.id AND m.bewoner_email = ?
+            WHERE p.deleted_at IS NULL
+            ORDER BY p.uploaded_at DESC, p.id DESC
+            LIMIT ?
+            """,
+            (viewer, limit),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def photo_stats() -> dict:
+    """Return summary counts used on the dashboard."""
+    with get_db() as conn:
+        total = conn.execute(
+            "SELECT COUNT(*) AS c FROM photos WHERE deleted_at IS NULL"
+        ).fetchone()["c"]
+        week = conn.execute(
+            "SELECT COUNT(*) AS c FROM photos "
+            "WHERE deleted_at IS NULL AND uploaded_at >= datetime('now', '-7 days')"
+        ).fetchone()["c"]
+        first = conn.execute(
+            "SELECT MIN(uploaded_at) AS m FROM photos WHERE deleted_at IS NULL"
+        ).fetchone()["m"]
+        days_since_first = 0
+        if first:
+            try:
+                from datetime import datetime, timezone
+                first_dt = datetime.strptime(first[:19], "%Y-%m-%d %H:%M:%S")
+                first_dt = first_dt.replace(tzinfo=timezone.utc)
+                delta = datetime.now(timezone.utc) - first_dt
+                days_since_first = max(0, delta.days)
+            except Exception:
+                days_since_first = 0
+        return {
+            "total": total,
+            "this_week": week,
+            "days_since_first": days_since_first,
+        }
+
+
+def count_photos_by_uploader(email: str) -> int:
+    """How many non-deleted photos this bewoner has uploaded."""
+    email = (email or "").strip().lower()
+    if not email:
+        return 0
+    with get_db() as conn:
+        return conn.execute(
+            "SELECT COUNT(*) AS c FROM photos "
+            "WHERE deleted_at IS NULL AND uploader_email = ?",
+            (email,),
+        ).fetchone()["c"]
+
+
+# ---------------------------------------------------------------------------
+# Photo likes (hartjes)
+# ---------------------------------------------------------------------------
+
+def toggle_photo_like(photo_id: int, bewoner_email: str) -> bool:
+    """Like the photo if not yet liked, unlike if already liked.
+    Returns True if the photo is now liked, False if unliked."""
+    email = (bewoner_email or "").strip().lower()
+    if not email:
+        return False
+    with get_db() as conn:
+        existing = conn.execute(
+            "SELECT id FROM photo_likes "
+            "WHERE photo_id = ? AND bewoner_email = ?",
+            (photo_id, email),
+        ).fetchone()
+        if existing:
+            conn.execute(
+                "DELETE FROM photo_likes WHERE id = ?", (existing["id"],)
+            )
+            return False
+        conn.execute(
+            "INSERT INTO photo_likes (photo_id, bewoner_email) VALUES (?, ?)",
+            (photo_id, email),
+        )
+        return True
+
+
+def count_photo_likes(photo_id: int) -> int:
+    with get_db() as conn:
+        return conn.execute(
+            "SELECT COUNT(*) AS c FROM photo_likes WHERE photo_id = ?",
+            (photo_id,),
+        ).fetchone()["c"]
+
+
+def is_photo_liked_by(photo_id: int, bewoner_email: str) -> bool:
+    email = (bewoner_email or "").strip().lower()
+    if not email:
+        return False
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT 1 FROM photo_likes "
+            "WHERE photo_id = ? AND bewoner_email = ?",
+            (photo_id, email),
+        ).fetchone()
+        return row is not None
 
 
 def hard_delete_photo(photo_id: int) -> Optional[dict]:

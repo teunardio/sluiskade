@@ -125,6 +125,48 @@
     }
     .selection-info.visible { display: block; }
 
+    .caption-field {
+      margin-top: 1.25rem;
+    }
+    .caption-field label {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--deep);
+      margin-bottom: 0.4rem;
+    }
+    .caption-field label span {
+      color: var(--muted);
+      font-weight: 400;
+    }
+    .caption-field textarea {
+      width: 100%;
+      padding: 0.7rem 0.9rem;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: var(--ink);
+      background: var(--paper);
+      border: 1px solid #cbd5e1;
+      border-radius: 0.6rem;
+      outline: none;
+      resize: vertical;
+      min-height: 60px;
+      line-height: 1.5;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .caption-field textarea:focus {
+      border-color: var(--water);
+      background: white;
+      box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.12);
+    }
+    .caption-counter {
+      display: block;
+      margin-top: 0.3rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: right;
+    }
+
     .submit {
       width: 100%;
       margin-top: 1.25rem;
@@ -191,6 +233,12 @@
 
       <div id="selectionInfo" class="selection-info"></div>
 
+      <div class="caption-field">
+        <label for="caption">Korte beschrijving <span>(optioneel, geldt voor alle foto's in deze upload)</span></label>
+        <textarea id="caption" name="caption" maxlength="240" placeholder="Bijvoorbeeld: eerste paal, dakplaten erop, het uitzicht vanaf onze plek..."></textarea>
+        <span class="caption-counter" id="captionCounter">0 / 240</span>
+      </div>
+
       <button id="submitBtn" class="submit" type="submit">
         {{ icon("camera", size=20, stroke=2) }}
         <span id="submitText">Uploaden</span>
@@ -225,6 +273,13 @@
         const spinner = document.createElement('span');
         spinner.className = 'spinner';
         btnIcon.replaceWith(spinner);
+      });
+
+      // Live caption counter
+      const cap = document.getElementById('caption');
+      const counter = document.getElementById('captionCounter');
+      cap.addEventListener('input', () => {
+        counter.textContent = cap.value.length + ' / 240';
       });
     })();
   </script>

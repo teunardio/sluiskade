@@ -1,14 +1,19 @@
 {#
-   Bewoners-portaal topbar with brand + current email + logout.
+   Bewoners-portaal topbar with brand + 'Verras me' link + email + logout.
    Usage:
        {% from "portaal/_topbar.html" import topbar %}
        {{ topbar(email) }}
 #}
 
 {% macro topbar(email) %}
+{% from "_icons.html" import icon %}
 <nav class="portaal-topbar" aria-label="Bewonersportaal navigatie">
-  <a class="portaal-brand" href="{{ url_for('portaal_gallery') }}">Sluis<span>kade</span></a>
+  <a class="portaal-brand" href="{{ url_for('portaal_index') }}">Sluis<span>kade</span></a>
   <div class="portaal-topbar-right">
+    <a class="portaal-shuffle" href="{{ url_for('portaal_random') }}" title="Toon mij een willekeurige foto">
+      {{ icon("shuffle", size=16, stroke=2) }}
+      <span>Verras me</span>
+    </a>
     <span class="portaal-email">{{ email }}</span>
     <form method="post" action="{{ url_for('portaal_logout') }}" class="portaal-logout-form">
       <button class="portaal-logout" type="submit">Uitloggen</button>
@@ -41,8 +46,25 @@
   .portaal-topbar-right {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.6rem;
     font-size: 0.85rem;
+  }
+  .portaal-shuffle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.85rem;
+    background: rgba(14, 165, 233, 0.08);
+    color: #0c4a6e;
+    border: 1px solid rgba(14, 165, 233, 0.18);
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.15s ease;
+  }
+  .portaal-shuffle:hover {
+    background: rgba(14, 165, 233, 0.18);
+    transform: translateY(-1px);
   }
   .portaal-email {
     color: #64748b;
@@ -51,8 +73,10 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  @media (max-width: 480px) {
+  @media (max-width: 600px) {
     .portaal-email { display: none; }
+    .portaal-shuffle span { display: none; }
+    .portaal-shuffle { padding: 0.45rem; }
   }
   .portaal-logout-form { margin: 0; }
   .portaal-logout {

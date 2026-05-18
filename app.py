@@ -14,10 +14,14 @@ Currently live routes:
 CLI commands:
     flask gen-qr-token          Generate a fresh QR token + URL for printing
 """
+import io
 import os
+import zipfile
+
 import click
 from flask import (
     Flask,
+    Response,
     abort,
     make_response,
     redirect,
@@ -78,22 +82,181 @@ def healthz():
 
 @app.route("/portaal")
 def portaal_index():
-    """Bewoners landing: login if no session, otherwise straight to gallery."""
+    """Bewoners dashboard. Stats + latest photos + quick-access cards."""
     if not bewoner_auth.has_valid_bewoner_session():
         return redirect(url_for("portaal_login"))
-    return redirect(url_for("portaal_gallery"))
+
+    email = bewoner_auth.get_current_bewoner_email()
+    stats = db.photo_stats()
+    own_count = db.count_photos_by_uploader(email)
+    latest = db.list_photos(limit=4)
+    return render_template(
+        "portaal/dashboard.html",
+        email=email,
+        stats=stats,
+        own_count=own_count,
+        latest=latest,
+    )
 
 
 @app.route("/portaal/gallery")
 @bewoner_auth.require_bewoner_session
 def portaal_gallery():
     """Show all photos for logged-in bewoners (newest first)."""
-    photos = db.list_photos(limit=200)
+    email = bewoner_auth.get_current_bewoner_email()
+    photos = db.list_photos_with_likes(limit=200, viewer_email=email)
     return render_template(
         "portaal/gallery.html",
         photos=photos,
         total_photos=db.count_photos(),
-        email=bewoner_auth.get_current_bewoner_email(),
+        email=email,
+    )
+
+
+@app.route("/portaal/tijdlijn")
+@bewoner_auth.require_bewoner_session
+def portaal_tijdlijn():
+    """Photos grouped by date with human labels (Vandaag, Gisteren, etc)."""
+    email = bewoner_auth.get_current_bewoner_email()
+    photos = db.list_photos_with_likes(limit=500, viewer_email=email)
+    groups = _group_photos_by_date(photos)
+    return render_template(
+        "portaal/tijdlijn.html",
+        groups=groups,
+        total_photos=db.count_photos(),
+        email=email,
+    )
+
+
+@app.route("/portaal/timelapse")
+@bewoner_auth.require_bewoner_session
+def portaal_timelapse():
+    """Autoplay slideshow through all photos in chronological order
+    (oldest to newest, so the build grows in front of you)."""
+    email = bewoner_auth.get_current_bewoner_email()
+    photos = db.list_photos_for_timeline(limit=500)
+    # Reverse to oldest-first for the timelapse to show progression
+    photos = list(reversed(photos))
+    return render_template(
+        "portaal/timelapse.html",
+        photos=photos,
+        total=len(photos),
+        email=email,
+    )
+
+
+@app.route("/portaal/random")
+@bewoner_auth.require_bewoner_session
+def portaal_random():
+    """Verras me: pick a random photo and bounce to its view."""
+    photo_id = db.random_visible_photo_id()
+    if photo_id is None:
+        return redirect(url_for("portaal_gallery"))
+    return redirect(url_for("portaal_view_photo", photo_id=photo_id))
+
+
+def _group_photos_by_date(photos: list[dict]) -> list[dict]:
+    """Group photos into labelled buckets for the timeline view.
+    Returns list of {label, photos} dicts in display order."""
+    from datetime import datetime, date, timedelta
+
+    today = date.today()
+    yesterday = today - timedelta(days=1)
+    week_start = today - timedelta(days=7)
+
+    buckets: dict[str, list] = {}
+    order: list[str] = []
+    month_names = {
+        1: "Januari", 2: "Februari", 3: "Maart", 4: "April",
+        5: "Mei", 6: "Juni", 7: "Juli", 8: "Augustus",
+        9: "September", 10: "Oktober", 11: "November", 12: "December",
+    }
+
+    for p in photos:
+        try:
+            d = datetime.strptime(p["uploaded_at"][:10], "%Y-%m-%d").date()
+        except (ValueError, KeyError):
+            continue
+
+        if d == today:
+            label = "Vandaag"
+        elif d == yesterday:
+            label = "Gisteren"
+        elif d > week_start:
+            label = "Deze week"
+        else:
+            label = f"{month_names[d.month]} {d.year}"
+
+        if label not in buckets:
+            buckets[label] = []
+            order.append(label)
+        buckets[label].append(p)
+
+    return [{"label": lbl, "photos": buckets[lbl]} for lbl in order]
+
+
+@app.route("/portaal/foto/<int:photo_id>/like", methods=["POST"])
+@bewoner_auth.require_bewoner_session
+def portaal_toggle_like(photo_id: int):
+    """Toggle like on a photo. Returns the new state for AJAX callers."""
+    photo = db.get_photo(photo_id)
+    if not photo or photo.get("deleted_at"):
+        abort(404)
+    email = bewoner_auth.get_current_bewoner_email()
+    liked = db.toggle_photo_like(photo_id, email)
+    count = db.count_photo_likes(photo_id)
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return {"liked": liked, "count": count}, 200
+    return redirect(request.referrer or url_for("portaal_view_photo", photo_id=photo_id))
+
+
+@app.route("/portaal/download/photo/<int:photo_id>")
+@bewoner_auth.require_bewoner_session
+def portaal_download_photo(photo_id: int):
+    """Single-photo download with a friendly filename."""
+    photo = db.get_photo(photo_id)
+    if not photo or photo.get("deleted_at"):
+        abort(404)
+    pretty_date = photo["uploaded_at"][:10]
+    return send_from_directory(
+        photo_service.PHOTOS_DIR,
+        photo["filename"],
+        as_attachment=True,
+        download_name=f"sluiskade-{pretty_date}-{photo_id}.jpg",
+    )
+
+
+@app.route("/portaal/download/all.zip")
+@bewoner_auth.require_bewoner_session
+def portaal_download_all():
+    """Build a ZIP of every visible photo in memory and return it.
+
+    Uses ZIP_STORED (no compression) because JPEGs do not recompress
+    meaningfully and STORED is much faster. Works comfortably up to a
+    few hundred photos. If we ever cross 1000+, switch to a streaming
+    library like zipstream-ng.
+    """
+    photos = db.list_photos(limit=2000)
+    if not photos:
+        return redirect(url_for("portaal_gallery"))
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as zf:
+        for p in photos:
+            path = os.path.join(photo_service.PHOTOS_DIR, p["filename"])
+            if not os.path.isfile(path):
+                continue
+            arcname = f"sluiskade-{p['uploaded_at'][:10]}-{p['id']}.jpg"
+            zf.write(path, arcname=arcname)
+
+    buf.seek(0)
+    return Response(
+        buf.getvalue(),
+        mimetype="application/zip",
+        headers={
+            "Content-Disposition": 'attachment; filename="sluiskade-archief.zip"',
+            "Cache-Control": "no-store",
+        },
     )
 
 
@@ -115,10 +278,15 @@ def portaal_upload():
 
 
 def _handle_bewoner_upload(email: str):
-    """Same pipeline as sluiswachter upload, tagged with source=bewoner."""
+    """Same pipeline as sluiswachter upload, tagged with source=bewoner.
+    A single optional caption applies to every file in the batch."""
     files = [f for f in request.files.getlist("photos") if f and f.filename]
     if not files:
         return redirect(url_for("portaal_upload", error="Geen foto's geselecteerd."))
+
+    caption_raw = (request.form.get("caption") or "").strip()
+    # Cap at 240 chars to keep gallery rendering clean
+    caption = caption_raw[:240] if caption_raw else None
 
     saved_ids: list[int] = []
     errors: list[tuple[str, str]] = []
@@ -134,6 +302,7 @@ def _handle_bewoner_upload(email: str):
                 width=result.width,
                 height=result.height,
                 file_size=result.file_size,
+                caption=caption,
             )
             saved_ids.append(photo_id)
         except PhotoError as exc:
@@ -169,6 +338,8 @@ def portaal_view_photo(photo_id: int):
     if not photo or photo.get("deleted_at"):
         abort(404)
     email = bewoner_auth.get_current_bewoner_email()
+    photo["like_count"] = db.count_photo_likes(photo_id)
+    photo["liked_by_me"] = db.is_photo_liked_by(photo_id, email)
     return render_template(
         "portaal/foto.html",
         photo=photo,

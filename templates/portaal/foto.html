@@ -110,6 +110,53 @@
       letter-spacing: 0.05em;
       text-transform: uppercase;
     }
+
+    .caption {
+      max-width: 32rem;
+      margin: 1rem auto 0;
+      padding: 0.85rem 1.1rem;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 0.75rem;
+      color: #e2e8f0;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      padding-top: 0.85rem;
+      flex-wrap: wrap;
+    }
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.55rem 1rem;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 999px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .action-btn:hover { background: rgba(255,255,255,0.18); transform: translateY(-1px); }
+    .action-btn.liked {
+      background: rgba(220, 38, 38, 0.25);
+      color: #fee2e2;
+      border-color: rgba(252, 165, 165, 0.4);
+    }
+    .action-btn .like-count {
+      font-variant-numeric: tabular-nums;
+      min-width: 0.5ch;
+    }
   </style>
 </head>
 <body>
@@ -137,6 +184,21 @@
       <img src="{{ url_for('serve_photo', photo_id=photo.id) }}" alt="" />
     </div>
 
+    {% if photo.caption %}
+    <div class="caption">{{ photo.caption }}</div>
+    {% endif %}
+
+    <div class="actions">
+      <button type="button" id="likeBtn" class="action-btn {% if photo.liked_by_me %}liked{% endif %}" data-photo-id="{{ photo.id }}">
+        {{ icon("heart-filled" if photo.liked_by_me else "heart", size=16, stroke=2) }}
+        <span class="like-count" id="likeCount">{{ photo.like_count or 0 }}</span>
+      </button>
+      <a class="action-btn" href="{{ url_for('portaal_download_photo', photo_id=photo.id) }}" download>
+        {{ icon("download", size=16, stroke=2) }}
+        Download
+      </a>
+    </div>
+
     <div class="meta">
       Geüpload op {{ photo.uploaded_at[:16].replace('T', ' ') }}
       {% if photo.width and photo.height %}
@@ -149,6 +211,34 @@
       {% endif %}
     </div>
   </main>
+
+  <script>
+    (function() {
+      const btn = document.getElementById('likeBtn');
+      if (!btn) return;
+      const countEl = document.getElementById('likeCount');
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        try {
+          const resp = await fetch('/portaal/foto/' + btn.dataset.photoId + '/like', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          });
+          const data = await resp.json();
+          if (resp.ok) {
+            btn.classList.toggle('liked', data.liked);
+            countEl.textContent = data.count;
+            const svg = btn.querySelector('svg');
+            if (svg) svg.outerHTML = data.liked
+              ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'
+              : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
+          }
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    })();
+  </script>
 
 </body>
 </html>

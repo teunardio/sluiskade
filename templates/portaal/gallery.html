@@ -139,6 +139,9 @@
     }
     .trash-btn:hover { background: #dc2626; transform: scale(1.05); }
     .trash-btn:active { transform: scale(0.95); }
+    /* Admin moderation: amber tint zodat 't visueel afwijkt van een
+       eigenaar die zijn eigen foto definitief weghaalt. */
+    .trash-btn.admin:hover { background: #b45309; }
 
     /* Inline confirm overlay (covers the thumb while asking) */
     .confirm-overlay {
@@ -157,6 +160,9 @@
       animation: fade-in 0.15s ease;
     }
     .thumb.confirming .confirm-overlay { display: flex; }
+    /* Admin-soft-delete: amber ipv rood, want recoverable */
+    .thumb.confirming.admin-delete .confirm-overlay { background: rgba(180, 83, 9, 0.95); }
+    .thumb.confirming.admin-delete .confirm-yes { color: #b45309; }
     .thumb.confirming img { filter: brightness(0.5) blur(1px); }
     .thumb.confirming .trash-btn { display: none; }
 
@@ -293,12 +299,16 @@
               {{ icon("heart-filled" if photo.liked_by_me else "heart", size=12, stroke=2) }}
               <span class="count">{% if photo.like_count and photo.like_count > 0 %}{{ photo.like_count }}{% endif %}</span>
             </button>
-            {% if is_mine %}
-              <button type="button" class="trash-btn" aria-label="Mijn foto verwijderen">
+            {% if is_mine or is_admin %}
+              <button type="button" class="trash-btn {% if is_admin and not is_mine %}admin{% endif %}" aria-label="Foto verwijderen">
                 {{ icon("trash", size=14, stroke=2) }}
               </button>
               <div class="confirm-overlay">
-                <div class="confirm-question">Definitief verwijderen?<br /><small>Dit kan niet ongedaan worden gemaakt.</small></div>
+                {% if is_admin and not is_mine %}
+                  <div class="confirm-question">Naar de prullenbak?<br /><small>Komt in /admin/prullenbak, daar herstel of definitief weg.</small></div>
+                {% else %}
+                  <div class="confirm-question">Definitief verwijderen?<br /><small>Dit kan niet ongedaan worden gemaakt.</small></div>
+                {% endif %}
                 <div class="confirm-buttons">
                   <button type="button" class="confirm-btn confirm-yes">Ja</button>
                   <button type="button" class="confirm-btn confirm-no">Nee</button>
@@ -322,7 +332,7 @@
 
       function cancelAllConfirms() {
         document.querySelectorAll('.thumb.confirming').forEach(t => {
-          t.classList.remove('confirming');
+          t.classList.remove('confirming', 'admin-delete');
         });
       }
 
@@ -331,7 +341,12 @@
           e.preventDefault();
           e.stopPropagation();
           cancelAllConfirms();
-          btn.closest('.thumb').classList.add('confirming');
+          const thumb = btn.closest('.thumb');
+          thumb.classList.add('confirming');
+          // Admin-modus trekt overlay amber ipv rood (soft-delete vs hard-delete)
+          if (btn.classList.contains('admin')) {
+            thumb.classList.add('admin-delete');
+          }
         });
       });
 

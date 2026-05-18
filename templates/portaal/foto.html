@@ -74,6 +74,16 @@
       color: #fee2e2;
       border-color: rgba(252, 165, 165, 0.5);
     }
+    /* Admin moderation: amber accent omdat 't soft-delete is, niet definitief */
+    .delete-btn.admin {
+      color: #fcd34d;
+      border-color: rgba(252, 211, 77, 0.3);
+    }
+    .delete-btn.admin:hover {
+      background: rgba(180, 83, 9, 0.3);
+      color: #fef3c7;
+      border-color: rgba(252, 211, 77, 0.55);
+    }
 
     .photo-wrap {
       flex: 1;
@@ -175,6 +185,15 @@
           <button class="delete-btn" type="submit">
             {{ icon("trash", size=16, stroke=2) }}
             Verwijderen
+          </button>
+        </form>
+      {% elif is_admin %}
+        <form class="delete-form" method="post"
+              action="{{ url_for('portaal_delete_photo', photo_id=photo.id) }}"
+              onsubmit="return confirm('Foto naar de prullenbak verplaatsen? Je kunt hem daar nog herstellen of definitief weggooien.');">
+          <button class="delete-btn admin" type="submit">
+            {{ icon("trash", size=16, stroke=2) }}
+            Naar prullenbak
           </button>
         </form>
       {% endif %}

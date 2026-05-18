@@ -368,23 +368,38 @@ def portaal_view_photo(photo_id: int):
 @app.route("/portaal/foto/<int:photo_id>/delete", methods=["POST"])
 @bewoner_auth.require_bewoner_session
 def portaal_delete_photo(photo_id: int):
-    """Bewoners may hard-delete their OWN uploads. Permissions:
+    """Verwijder een foto. Twee paden:
 
-        - The photo must exist
-        - source must be 'bewoner'
-        - uploader_email must match the current bewoner
+        - **Bewoner verwijdert eigen upload** → hard-delete (rij + bestanden weg)
+        - **Admin verwijdert wat dan ook**   → soft-delete (in de prullenbak,
+          recoverable via /admin/prullenbak)
 
-    Sluiswachter-uploaded photos can NOT be deleted by bewoners. Those
-    go through the sluis soft-delete or admin recovery flow.
+    Bewoners kunnen sluiswachter-foto's of andermans foto's niet aanraken;
+    die krijgen een 403.
     """
     photo = db.get_photo(photo_id)
     if not photo:
         abort(404)
 
     email = bewoner_auth.get_current_bewoner_email()
-    if not _is_bewoner_own_photo(photo, email):
+    is_admin = admin_auth.has_valid_admin_session()
+    is_own = _is_bewoner_own_photo(photo, email)
+
+    if not (is_own or is_admin):
         abort(403)
 
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+    if is_admin and not is_own:
+        # Admin moderation: soft-delete zodat 'ie in de prullenbak komt
+        # en hersteld kan worden als de admin per ongeluk klikte.
+        db.soft_delete_photo(photo_id, deleted_by="admin")
+        app.logger.info("Admin soft-deleted photo %s", photo_id)
+        if is_ajax:
+            return {"ok": True, "id": photo_id, "mode": "soft"}, 200
+        return redirect(url_for("portaal_gallery"))
+
+    # Bewoner haalt zijn eigen upload weg: hard-delete, vertrouwen we op.
     deleted = db.hard_delete_photo(photo_id)
     if deleted:
         photo_service.delete_files(
@@ -392,10 +407,8 @@ def portaal_delete_photo(photo_id: int):
         )
         app.logger.info("Bewoner %s hard-deleted photo %s", email, photo_id)
 
-    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
     if is_ajax:
-        return {"ok": True, "id": photo_id}, 200
-
+        return {"ok": True, "id": photo_id, "mode": "hard"}, 200
     return redirect(url_for("portaal_gallery"))
 
 

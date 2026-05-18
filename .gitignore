@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Flask
+instance/
+.webassets-cache
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Logs
+*.log
+logs/
+
+# Application data (lives on the VPS, never in the repo)
+/data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploaded media
+/uploads/
+/media/
+
+# Node (for any Tailwind tooling we might add later)
+node_modules/
+npm-debug.log*
+
+# Coverage / testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/

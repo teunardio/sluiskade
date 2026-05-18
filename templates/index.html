@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0c4a6e" />
+  <title>Sluiskade — er wordt gebouwd</title>
+  <meta name="description" content="Een woningbouwproject aan de Sluiskade. Hier wordt iets moois gebouwd." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --deep:      #0c4a6e;
+      --water:     #0ea5e9;
+      --foam:      #e0f2fe;
+      --ink:       #0f172a;
+      --paper:     #f8fafc;
+      --muted:     #64748b;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, var(--foam) 0%, var(--paper) 60%, #ffffff 100%);
+      overflow-x: hidden;
+    }
+
+    .stage {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.9rem;
+      background: rgba(14, 165, 233, 0.1);
+      border: 1px solid rgba(14, 165, 233, 0.25);
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--deep);
+      margin-bottom: 2rem;
+    }
+
+    .badge::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--water);
+      box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7); }
+      70%  { box-shadow: 0 0 0 12px rgba(14, 165, 233, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+    }
+
+    h1 {
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      font-weight: 700;
+      margin: 0 0 1rem;
+      letter-spacing: -0.03em;
+      color: var(--deep);
+      line-height: 1;
+    }
+
+    h1 .accent {
+      color: var(--water);
+    }
+
+    p.lede {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      font-weight: 300;
+      color: var(--muted);
+      max-width: 32rem;
+      margin: 0 auto 2.5rem;
+      line-height: 1.6;
+    }
+
+    .meta {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .meta span strong {
+      display: block;
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--deep);
+      margin-bottom: 0.2rem;
+    }
+
+    footer {
+      position: absolute;
+      bottom: 1.5rem;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      z-index: 2;
+    }
+
+    /* Subtle waves at the bottom */
+    .waves {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 120px;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    .waves svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .wave-path {
+      animation: drift 14s ease-in-out infinite alternate;
+      transform-origin: center;
+    }
+
+    @keyframes drift {
+      from { transform: translateX(-2%); }
+      to   { transform: translateX(2%); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .badge::before,
+      .wave-path { animation: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <main class="stage">
+    <div class="badge">Bouw in voorbereiding</div>
+
+    <h1>Sluis<span class="accent">kade</span></h1>
+
+    <p class="lede">
+      Hier wordt iets moois gebouwd. Een buurt aan het water, gezien door de ogen van de sluiswachter.
+      <br /><br />
+      Binnenkort live.
+    </p>
+
+    <div class="meta">
+      <span><strong>Een buurt</strong>aan de sluis</span>
+      <span><strong>365 foto's</strong>per jaar, hopelijk</span>
+      <span><strong>0</strong>palen in de grond</span>
+    </div>
+  </main>
+
+  <div class="waves" aria-hidden="true">
+    <svg viewBox="0 0 1440 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path class="wave-path"
+            d="M0,60 C240,100 480,20 720,60 C960,100 1200,20 1440,60 L1440,120 L0,120 Z"
+            fill="#0ea5e9" />
+    </svg>
+  </div>
+
+  <footer>
+    Een project van Teunard · gebouwd op droog.cloud · {{ 2026 }}
+  </footer>
+
+</body>
+</html>

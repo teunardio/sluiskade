@@ -145,11 +145,19 @@ def send_access_request_notification(req: dict) -> bool:
     """Notify ADMIN_EMAIL of a new toegangsaanvraag."""
     subject = f"Nieuwe toegangsaanvraag Sluiskade: {req.get('email')}"
     motivatie = req.get("motivatie") or "(geen toelichting)"
+    naam = f"{req.get('voornaam', '')} {req.get('achternaam', '')}".strip()
+    aanvragen_url = f"{PUBLIC_BASE_URL}/admin/aanvragen"
     html = f"""<!doctype html>
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <style>{_BASE_STYLE}</style>
+  <style>
+    {_BASE_STYLE}
+    .cta-btn {{ display: inline-block; padding: 12px 22px; background: #0ea5e9;
+              color: white !important; text-decoration: none; border-radius: 999px;
+              font-weight: 600; font-size: 15px; margin-top: 16px;
+              box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25); }}
+  </style>
 </head>
 <body>
   <div class="wrap">
@@ -158,15 +166,18 @@ def send_access_request_notification(req: dict) -> bool:
       <h1>Nieuwe toegangsaanvraag</h1>
       <p>Iemand vraagt toegang tot het bewonersportaal:</p>
 
-      <p class="kvp"><b>Naam:</b> {req.get('voornaam', '')} {req.get('achternaam', '')}</p>
+      <p class="kvp"><b>Naam:</b> {naam or '(geen naam)'}</p>
       <p class="kvp"><b>E-mail:</b> {req.get('email', '')}</p>
       <p class="kvp"><b>Motivatie:</b> {motivatie}</p>
       <p class="kvp"><b>Aangevraagd:</b> {req.get('requested_at', '')}</p>
 
-      <p style="margin-top: 24px;">Goedkeuren? Voeg toe vanaf de Coolify container terminal:</p>
-      <pre style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px;
-                  padding: 12px; font-size: 13px; overflow-x: auto;">flask add-bewoner --email={req.get('email', '')} --name="{req.get('voornaam', '')} {req.get('achternaam', '')}"</pre>
-      <p style="color: #64748b; font-size: 13px;">De admin UI met one-click goedkeuren komt in Sprint 3.</p>
+      <p style="margin-top: 20px;">Open het beheerpaneel om met één klik goed- of af te keuren:</p>
+      <p style="text-align: center; margin: 8px 0 4px;">
+        <a href="{aanvragen_url}" class="cta-btn">Aanvraag bekijken</a>
+      </p>
+      <p style="color: #64748b; font-size: 12px; text-align: center; margin-top: 8px;">
+        Inloggen met je admin-account (e-mail + code + wachtwoord).
+      </p>
     </div>
     <div class="footer">Sluiskade Admin notificatie</div>
   </div>

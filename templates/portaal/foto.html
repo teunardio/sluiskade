@@ -33,6 +33,7 @@
     .topbar {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 0.5rem;
       padding: 0.5rem 0 1rem;
     }
@@ -51,6 +52,28 @@
       transition: background 0.15s ease;
     }
     .back:hover { background: rgba(255,255,255,0.16); }
+
+    .delete-form { margin: 0; }
+    .delete-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.5rem 0.9rem;
+      background: rgba(255,255,255,0.08);
+      color: #fca5a5;
+      border: 1px solid rgba(252, 165, 165, 0.25);
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .delete-btn:hover {
+      background: rgba(220, 38, 38, 0.25);
+      color: #fee2e2;
+      border-color: rgba(252, 165, 165, 0.5);
+    }
 
     .photo-wrap {
       flex: 1;
@@ -98,6 +121,16 @@
         {{ icon("arrow-left", size=18, stroke=2.25) }}
         Galerij
       </a>
+      {% if is_mine %}
+        <form class="delete-form" method="post"
+              action="{{ url_for('portaal_delete_photo', photo_id=photo.id) }}"
+              onsubmit="return confirm('Deze foto definitief verwijderen? Dit kan niet ongedaan worden gemaakt.');">
+          <button class="delete-btn" type="submit">
+            {{ icon("trash", size=16, stroke=2) }}
+            Verwijderen
+          </button>
+        </form>
+      {% endif %}
     </div>
 
     <div class="photo-wrap">

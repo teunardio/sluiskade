@@ -199,6 +199,25 @@ def soft_delete_photo(
         return cur.rowcount > 0
 
 
+def hard_delete_photo(photo_id: int) -> Optional[dict]:
+    """Remove a photo row from the database entirely.
+
+    Returns the deleted row as a dict (so the caller can also remove
+    the files from disk via photo_service.delete_files), or None if no
+    row existed. Used by bewoners to permanently delete their own uploads;
+    sluiswachters always go through soft_delete_photo so the admin can
+    recover.
+    """
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM photos WHERE id = ?", (photo_id,)
+        ).fetchone()
+        if not row:
+            return None
+        conn.execute("DELETE FROM photos WHERE id = ?", (photo_id,))
+        return dict(row)
+
+
 # ---------------------------------------------------------------------------
 # Allowed-residents helpers (whitelist)
 # ---------------------------------------------------------------------------

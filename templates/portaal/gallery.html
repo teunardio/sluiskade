@@ -116,9 +116,90 @@
       border-radius: 999px;
       pointer-events: none;
     }
+
+    /* Trash button - only shown on photos uploaded by the current bewoner */
+    .trash-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 30px;
+      height: 30px;
+      background: rgba(15, 23, 42, 0.55);
+      color: white;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+      backdrop-filter: blur(6px);
+      transition: background 0.15s ease, transform 0.1s ease;
+      z-index: 2;
+    }
+    .trash-btn:hover { background: #dc2626; transform: scale(1.05); }
+    .trash-btn:active { transform: scale(0.95); }
+
+    /* Inline confirm overlay (covers the thumb while asking) */
+    .confirm-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(220, 38, 38, 0.94);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      gap: 0.5rem;
+      text-align: center;
+      padding: 0.75rem;
+      z-index: 3;
+      animation: fade-in 0.15s ease;
+    }
+    .thumb.confirming .confirm-overlay { display: flex; }
+    .thumb.confirming img { filter: brightness(0.5) blur(1px); }
+    .thumb.confirming .trash-btn { display: none; }
+
+    .confirm-question {
+      font-size: 0.82rem;
+      font-weight: 500;
+      line-height: 1.3;
+    }
+    .confirm-question small {
+      display: block;
+      font-weight: 400;
+      opacity: 0.85;
+      margin-top: 2px;
+      font-size: 0.7rem;
+    }
+    .confirm-buttons { display: flex; gap: 6px; }
+    .confirm-btn {
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: inherit;
+    }
+    .confirm-yes { background: white; color: #dc2626; }
+    .confirm-no  { background: rgba(255,255,255,0.2); color: white; }
+    .confirm-yes:disabled { opacity: 0.5; cursor: wait; }
+
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .thumb.removing {
+      opacity: 0;
+      transform: scale(0.85);
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
+  {% from "_icons.html" import icon %}
   {% from "portaal/_topbar.html" import topbar %}
   {% from "portaal/_tabs.html" import tabs %}
 
@@ -133,17 +214,30 @@
     {{ tabs(current='gallery') }}
 
     {% if photos %}
-      <div class="grid">
+      <div class="grid" id="grid">
         {% for photo in photos %}
-          <div class="thumb">
+          {% set is_mine = photo.source == 'bewoner' and photo.uploader_email and email and photo.uploader_email|lower == email|lower %}
+          <div class="thumb" data-id="{{ photo.id }}">
             <a href="{{ url_for('portaal_view_photo', photo_id=photo.id) }}">
               <img src="{{ url_for('serve_thumb', photo_id=photo.id) }}" alt="" loading="lazy" />
               {% if photo.source == 'sluis' %}
                 <span class="source-tag">Sluiswachter</span>
               {% elif photo.source == 'bewoner' %}
-                <span class="source-tag">Buur</span>
+                <span class="source-tag">{% if is_mine %}Jij{% else %}Buur{% endif %}</span>
               {% endif %}
             </a>
+            {% if is_mine %}
+              <button type="button" class="trash-btn" aria-label="Mijn foto verwijderen">
+                {{ icon("trash", size=14, stroke=2) }}
+              </button>
+              <div class="confirm-overlay">
+                <div class="confirm-question">Definitief verwijderen?<br /><small>Dit kan niet ongedaan worden gemaakt.</small></div>
+                <div class="confirm-buttons">
+                  <button type="button" class="confirm-btn confirm-yes">Ja</button>
+                  <button type="button" class="confirm-btn confirm-no">Nee</button>
+                </div>
+              </div>
+            {% endif %}
           </div>
         {% endfor %}
       </div>
@@ -154,6 +248,78 @@
       </div>
     {% endif %}
   </main>
+
+  <script>
+    (function() {
+      const counter = document.querySelector('.counter strong');
+
+      function cancelAllConfirms() {
+        document.querySelectorAll('.thumb.confirming').forEach(t => {
+          t.classList.remove('confirming');
+        });
+      }
+
+      document.querySelectorAll('.trash-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          cancelAllConfirms();
+          btn.closest('.thumb').classList.add('confirming');
+        });
+      });
+
+      document.querySelectorAll('.confirm-no').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          btn.closest('.thumb').classList.remove('confirming');
+        });
+      });
+
+      document.querySelectorAll('.confirm-yes').forEach(btn => {
+        btn.addEventListener('click', async e => {
+          e.preventDefault();
+          e.stopPropagation();
+          const thumb = btn.closest('.thumb');
+          const id = thumb.dataset.id;
+          btn.disabled = true;
+
+          try {
+            const resp = await fetch('/portaal/foto/' + id + '/delete', {
+              method: 'POST',
+              headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const data = await resp.json();
+            if (resp.ok && data.ok) {
+              thumb.classList.add('removing');
+              setTimeout(() => {
+                thumb.remove();
+                if (counter) {
+                  const n = parseInt(counter.textContent, 10) - 1;
+                  counter.textContent = Math.max(0, n);
+                }
+                if (!document.querySelector('.thumb')) {
+                  window.location.reload();
+                }
+              }, 280);
+            } else {
+              btn.disabled = false;
+              alert('Kon de foto niet verwijderen. Probeer opnieuw.');
+            }
+          } catch (err) {
+            btn.disabled = false;
+            alert('Geen verbinding. Probeer opnieuw.');
+          }
+        });
+      });
+
+      document.addEventListener('click', e => {
+        if (!e.target.closest('.thumb.confirming')) {
+          cancelAllConfirms();
+        }
+      });
+    })();
+  </script>
 
 </body>
 </html>

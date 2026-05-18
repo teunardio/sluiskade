@@ -151,6 +151,16 @@ def _handle_bewoner_upload(email: str):
     return redirect(url_for("portaal_gallery"))
 
 
+def _is_bewoner_own_photo(photo: dict, email: str) -> bool:
+    """True if this photo was uploaded by the given bewoner."""
+    if not email:
+        return False
+    return (
+        photo.get("source") == "bewoner"
+        and (photo.get("uploader_email") or "").lower() == email.lower()
+    )
+
+
 @app.route("/portaal/foto/<int:photo_id>")
 @bewoner_auth.require_bewoner_session
 def portaal_view_photo(photo_id: int):
@@ -158,7 +168,46 @@ def portaal_view_photo(photo_id: int):
     photo = db.get_photo(photo_id)
     if not photo or photo.get("deleted_at"):
         abort(404)
-    return render_template("portaal/foto.html", photo=photo)
+    email = bewoner_auth.get_current_bewoner_email()
+    return render_template(
+        "portaal/foto.html",
+        photo=photo,
+        is_mine=_is_bewoner_own_photo(photo, email),
+    )
+
+
+@app.route("/portaal/foto/<int:photo_id>/delete", methods=["POST"])
+@bewoner_auth.require_bewoner_session
+def portaal_delete_photo(photo_id: int):
+    """Bewoners may hard-delete their OWN uploads. Permissions:
+
+        - The photo must exist
+        - source must be 'bewoner'
+        - uploader_email must match the current bewoner
+
+    Sluiswachter-uploaded photos can NOT be deleted by bewoners. Those
+    go through the sluis soft-delete or admin recovery flow.
+    """
+    photo = db.get_photo(photo_id)
+    if not photo:
+        abort(404)
+
+    email = bewoner_auth.get_current_bewoner_email()
+    if not _is_bewoner_own_photo(photo, email):
+        abort(403)
+
+    deleted = db.hard_delete_photo(photo_id)
+    if deleted:
+        photo_service.delete_files(
+            deleted["filename"], deleted.get("thumb_filename")
+        )
+        app.logger.info("Bewoner %s hard-deleted photo %s", email, photo_id)
+
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+    if is_ajax:
+        return {"ok": True, "id": photo_id}, 200
+
+    return redirect(url_for("portaal_gallery"))
 
 
 @app.route("/portaal/aanvragen", methods=["GET", "POST"])

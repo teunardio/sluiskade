@@ -113,9 +113,17 @@ def set_sluis_session_cookie(response):
     HttpOnly: not readable from JavaScript (XSS defense).
     Secure: only sent over HTTPS (always true in production via Traefik).
     SameSite=Lax: protects against CSRF while allowing the QR-scan redirect.
-    path=/sluis: cookie is never sent to /portaal, /admin or /, keeping
-        the roles cleanly separated.
+    path=/: cookie is sent for every URL under the domain — needed so
+        the auth'd /media/* routes also receive it. The cookie name is
+        unique per role (sluis_session, bewoner_session, etc.), so paths
+        don't have to enforce isolation.
     """
+    # Wipe any older path-scoped cookie from a previous deploy. Cookies
+    # with different paths coexist; without this, both old and new would
+    # be sent and the wrong one could win. Safe to call even when no old
+    # cookie exists. Can be removed once all live sessions have rotated.
+    response.delete_cookie(SLUIS_SESSION_COOKIE, path="/sluis")
+
     response.set_cookie(
         SLUIS_SESSION_COOKIE,
         _sign_sluis_session(),
@@ -123,13 +131,13 @@ def set_sluis_session_cookie(response):
         httponly=True,
         secure=not current_app.debug,  # allow HTTP cookies during local dev
         samesite="Lax",
-        path="/sluis",
+        path="/",
     )
     return response
 
 
 def clear_sluis_session_cookie(response):
-    response.delete_cookie(SLUIS_SESSION_COOKIE, path="/sluis")
+    response.delete_cookie(SLUIS_SESSION_COOKIE, path="/")
     return response
 
 

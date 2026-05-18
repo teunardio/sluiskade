@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0c4a6e" />
+  <title>Bedankt! — Sluiskade</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --deep:    #0c4a6e;
+      --water:   #0ea5e9;
+      --foam:    #e0f2fe;
+      --ink:     #0f172a;
+      --paper:   #f8fafc;
+      --muted:   #64748b;
+      --soft:    #ffffff;
+      --success: #15803d;
+      --success-bg: #dcfce7;
+      --warn:    #b45309;
+      --warn-bg: #fef3c7;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, var(--foam) 0%, var(--paper) 60%, #ffffff 100%);
+    }
+
+    .stage {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem 3rem;
+      text-align: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 32rem;
+    }
+
+    .success-badge {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      background: var(--success-bg);
+      color: var(--success);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+      animation: badge-in 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      position: relative;
+    }
+
+    /* Ripple ring around the success badge */
+    .success-badge::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2px solid var(--success);
+      opacity: 0;
+      animation: ripple 1.6s ease-out 0.4s both;
+    }
+
+    @keyframes badge-in {
+      0%   { transform: scale(0.3); opacity: 0; }
+      60%  { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes ripple {
+      0%   { transform: scale(1); opacity: 0.6; }
+      100% { transform: scale(1.8); opacity: 0; }
+    }
+
+    h1 {
+      font-size: clamp(2rem, 6vw, 3rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--deep);
+      margin: 0 0 0.5rem;
+      line-height: 1.1;
+      animation: slide-down 0.5s ease 0.2s both;
+    }
+
+    .lede {
+      font-size: 1.05rem;
+      color: var(--muted);
+      margin: 0 0 2rem;
+      line-height: 1.5;
+      animation: slide-down 0.5s ease 0.3s both;
+    }
+
+    @keyframes slide-down {
+      from { opacity: 0; transform: translateY(-10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .thumbs {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+
+    .thumb {
+      width: 84px;
+      height: 84px;
+      border-radius: 0.6rem;
+      overflow: hidden;
+      background: var(--paper);
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+      animation: thumb-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    @keyframes thumb-in {
+      from { opacity: 0; transform: scale(0.6) translateY(10px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .progress-card {
+      background: var(--soft);
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+      animation: slide-down 0.5s ease 0.6s both;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .progress-label strong { color: var(--deep); }
+
+    .progress-bar {
+      position: relative;
+      height: 8px;
+      background: var(--foam);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 0%;
+      background: linear-gradient(90deg, var(--water), #38bdf8);
+      border-radius: 999px;
+      transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .fail-note {
+      display: inline-flex;
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.5rem 0.9rem;
+      background: var(--warn-bg);
+      color: var(--warn);
+      border-radius: 999px;
+      font-size: 0.8rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 1rem 1.75rem;
+      background: var(--water);
+      color: white;
+      font-weight: 600;
+      font-size: 1.05rem;
+      border-radius: 999px;
+      text-decoration: none;
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.3);
+      transition: transform 0.1s ease;
+      animation: slide-down 0.5s ease 0.7s both;
+    }
+
+    .cta:hover { transform: translateY(-1px); }
+    .cta svg { flex-shrink: 0; }
+
+    .countdown {
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      animation: slide-down 0.5s ease 0.8s both;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .success-badge, .success-badge::after, h1, .lede,
+      .thumb, .progress-card, .cta, .countdown {
+        animation: none;
+      }
+      .progress-fill { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  {% from "_icons.html" import icon %}
+
+  <main class="stage">
+    <div class="container">
+      <div class="success-badge">
+        {{ icon("check-circle", size=48, stroke=2.25) }}
+      </div>
+
+      <h1>Bedankt!</h1>
+      <p class="lede">
+        {% if photo_ids|length == 1 %}
+          Je foto is binnen.
+        {% else %}
+          Je {{ photo_ids|length }} foto's zijn binnen.
+        {% endif %}
+      </p>
+
+      <div class="thumbs">
+        {% for pid in photo_ids %}
+          <div class="thumb" style="animation-delay: {{ 0.4 + loop.index0 * 0.08 }}s">
+            <img src="{{ url_for('serve_thumb', photo_id=pid) }}" alt="" loading="lazy" />
+          </div>
+        {% endfor %}
+      </div>
+
+      {% if fail_count %}
+      <div class="fail-note">
+        {{ icon("alert-triangle", size=14, stroke=2) }}
+        {{ fail_count }} {% if fail_count == 1 %}foto kon{% else %}foto's konden{% endif %} niet verwerkt worden
+      </div>
+      {% endif %}
+
+      <div class="progress-card">
+        <div class="progress-label">
+          <span><strong>{{ total_photos }}</strong> van {{ goal_total }} foto's</span>
+          <span>nog {{ remaining }} te gaan</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"
+               data-pct="{{ ((total_photos / goal_total * 100) if goal_total else 0) | round(1) }}"></div>
+        </div>
+      </div>
+
+      <a href="{{ url_for('sluis_upload') }}" class="cta">
+        {{ icon("camera", size=20, stroke=2) }}
+        Volgende foto
+      </a>
+
+      <div class="countdown">
+        Automatisch terug over <span id="countdown">8</span> seconden
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function() {
+      // Animate the progress bar fill after the page settles
+      const fill = document.getElementById('progressFill');
+      const pct = Math.min(100, parseFloat(fill.dataset.pct) || 0);
+      setTimeout(() => { fill.style.width = pct + '%'; }, 600);
+
+      // Countdown + auto redirect
+      let seconds = 8;
+      const el = document.getElementById('countdown');
+      const interval = setInterval(() => {
+        seconds -= 1;
+        if (seconds <= 0) {
+          clearInterval(interval);
+          window.location.href = {{ url_for('sluis_upload') | tojson }};
+        } else {
+          el.textContent = seconds;
+        }
+      }, 1000);
+    })();
+  </script>
+
+</body>
+</html>

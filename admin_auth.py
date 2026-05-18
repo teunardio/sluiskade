@@ -107,7 +107,9 @@ def _session_serializer() -> URLSafeTimedSerializer:
 
 
 def set_otp_passed_cookie(response):
-    """Markeert dat de email-factor geslaagd is. Geldig voor de password-stap."""
+    """Markeert dat de email-factor geslaagd is. Geldig voor de password-stap.
+    Path=/portaal omdat de password-stap nu onder /portaal/password leeft,
+    niet meer onder /admin."""
     response.set_cookie(
         ADMIN_OTP_COOKIE,
         _otp_serializer().dumps({"email": ADMIN_EMAIL}),
@@ -115,7 +117,7 @@ def set_otp_passed_cookie(response):
         httponly=True,
         secure=not current_app.debug,
         samesite="Lax",
-        path="/admin",
+        path="/portaal",
     )
     return response
 
@@ -133,6 +135,8 @@ def has_otp_passed() -> bool:
 
 
 def clear_otp_passed_cookie(response):
+    response.delete_cookie(ADMIN_OTP_COOKIE, path="/portaal")
+    # Self-healing: oude cookies met path=/admin ook opruimen
     response.delete_cookie(ADMIN_OTP_COOKIE, path="/admin")
     return response
 

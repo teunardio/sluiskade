@@ -100,11 +100,21 @@ def get_current_bewoner_email() -> Optional[str]:
 
 def has_valid_bewoner_session() -> bool:
     """Cookie present, signature valid, not expired, AND email still on
-    the whitelist. Removing a bewoner from allowed_residents immediately
-    invalidates their session, even if the cookie hasn't expired yet."""
+    de whitelist OF email is het admin-adres.
+
+    Verwijderen van een bewoner uit allowed_residents invalideert hun
+    sessie meteen, ook al is de cookie nog niet verlopen. Admin krijgt
+    automatisch bewoner-rechten zodat /portaal/* schermen werken zonder
+    dat 'ie in de whitelist hoeft.
+    """
     email = get_current_bewoner_email()
     if not email:
         return False
+    # Lazy import: admin_auth importeert niets uit ons, maar voor de
+    # zekerheid hier importen zodat we geen circular dependency krijgen.
+    import admin_auth  # noqa: WPS433
+    if admin_auth.is_admin_email(email):
+        return True
     return db.is_email_allowed(email)
 
 

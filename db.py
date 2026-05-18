@@ -46,27 +46,34 @@ CREATE INDEX IF NOT EXISTS idx_photos_source   ON photos(source);
 def get_db() -> Iterator[sqlite3.Connection]:
     """Context-managed SQLite connection with row factory and FK on.
 
-    Commits on clean exit, rolls back on exception.
+    Uses sqlite3's default deferred-transaction mode and relies on the
+    Python-level commit()/rollback() methods, which are no-ops when there
+    is nothing pending. Avoids the autocommit + manual BEGIN/COMMIT
+    confusion that bites you with executescript().
     """
     os.makedirs(DATA_PATH, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH, isolation_level=None)
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
-    conn.execute("PRAGMA journal_mode = WAL")  # better concurrent reads
     try:
-        conn.execute("BEGIN")
         yield conn
-        conn.execute("COMMIT")
+        conn.commit()
     except Exception:
-        conn.execute("ROLLBACK")
+        conn.rollback()
         raise
     finally:
         conn.close()
 
 
 def init_db() -> None:
-    """Create tables and indexes if they don't exist yet. Idempotent."""
+    """Create tables and indexes if they don't exist yet. Idempotent.
+
+    Also flips the database to WAL journal mode on first run — that's a
+    persistent file-level setting so we only need to do it once.
+    """
     with get_db() as conn:
+        # WAL is persisted on the DB file itself; safe to set repeatedly.
+        conn.execute("PRAGMA journal_mode = WAL")
         conn.executescript(SCHEMA)
 
 

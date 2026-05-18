@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Galerij, Sluiskade</title>
+  {% include "_head_meta.html" %}
+
+  <style>
+    :root {
+      --deep:  #0c4a6e;
+      --water: #0ea5e9;
+      --foam:  #e0f2fe;
+      --ink:   #0f172a;
+      --paper: #f8fafc;
+      --muted: #64748b;
+      --soft:  #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, var(--foam) 0%, var(--paper) 60%, #ffffff 100%);
+    }
+
+    .stage {
+      padding: 2rem 1rem 4rem;
+      max-width: 64rem;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      font-size: clamp(1.6rem, 4vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--deep);
+      margin: 0 0 0.3rem;
+      line-height: 1.15;
+    }
+
+    .counter { font-size: 0.92rem; color: var(--muted); margin: 0; }
+    .counter strong { color: var(--deep); font-weight: 600; }
+
+    .empty {
+      text-align: center;
+      padding: 4rem 1.5rem;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      color: var(--muted);
+      max-width: 30rem;
+      margin: 0 auto;
+    }
+    .empty h2 { color: var(--deep); font-size: 1.15rem; margin: 0 0 0.5rem; }
+    .empty p { margin: 0; line-height: 1.6; font-size: 0.95rem; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+    }
+
+    .thumb {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 0.6rem;
+      overflow: hidden;
+      background: var(--paper);
+      border: 1px solid #e2e8f0;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .thumb:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 26px -12px rgba(12, 74, 110, 0.3);
+    }
+
+    .thumb a {
+      display: block;
+      width: 100%;
+      height: 100%;
+      text-decoration: none;
+    }
+
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .thumb:hover img { transform: scale(1.04); }
+
+    /* Source-tag in the corner: tiny pill showing whether the photo
+       came from a sluiswachter or a bewoner */
+    .source-tag {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      padding: 3px 8px;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(6px);
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border-radius: 999px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  {% from "portaal/_topbar.html" import topbar %}
+  {% from "portaal/_tabs.html" import tabs %}
+
+  {{ topbar(email) }}
+
+  <main class="stage">
+    <header>
+      <h1>Galerij</h1>
+      <p class="counter"><strong>{{ total_photos }}</strong> {% if total_photos == 1 %}foto{% else %}foto's{% endif %} verzameld</p>
+    </header>
+
+    {{ tabs(current='gallery') }}
+
+    {% if photos %}
+      <div class="grid">
+        {% for photo in photos %}
+          <div class="thumb">
+            <a href="{{ url_for('portaal_view_photo', photo_id=photo.id) }}">
+              <img src="{{ url_for('serve_thumb', photo_id=photo.id) }}" alt="" loading="lazy" />
+              {% if photo.source == 'sluis' %}
+                <span class="source-tag">Sluiswachter</span>
+              {% elif photo.source == 'bewoner' %}
+                <span class="source-tag">Buur</span>
+              {% endif %}
+            </a>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">
+        <h2>Hier komen de eerste foto's</h2>
+        <p>Zodra de sluiswachters of de buren een foto uploaden zie je hem hier verschijnen. Je kunt ook zelf alvast een foto plaatsen via het tabblad <strong>Uploaden</strong>.</p>
+      </div>
+    {% endif %}
+  </main>
+
+</body>
+</html>

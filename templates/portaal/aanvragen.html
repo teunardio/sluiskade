@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <title>Inloggen, Sluiskade</title>
+  <title>Toegang aanvragen, Sluiskade</title>
   {% include "_head_meta.html" %}
 
   <style>
@@ -38,7 +38,7 @@
       padding: 2rem 1.5rem 4rem;
     }
 
-    .container { width: 100%; max-width: 26rem; }
+    .container { width: 100%; max-width: 30rem; }
 
     header { text-align: center; margin-bottom: 1.5rem; }
 
@@ -52,6 +52,7 @@
       margin: 0 0 0.5rem;
       line-height: 1.15;
     }
+
     header p {
       font-size: 0.95rem;
       color: var(--muted);
@@ -80,36 +81,52 @@
       line-height: 1.5;
     }
     .alert svg { flex-shrink: 0; margin-top: 1px; }
+    .alert a {
+      color: var(--warn);
+      font-weight: 600;
+      text-decoration: underline;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    @media (min-width: 480px) {
+      .row.two-cols { grid-template-columns: 1fr 1fr; }
+    }
 
     label {
       display: block;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       font-weight: 500;
       color: var(--deep);
-      margin-bottom: 0.4rem;
+      margin-bottom: 0.35rem;
     }
 
-    input[type="email"] {
+    input[type="text"], input[type="email"], textarea {
       width: 100%;
-      padding: 0.8rem 1rem;
+      padding: 0.75rem 0.95rem;
       font-size: 1rem;
       font-family: inherit;
       color: var(--ink);
       background: var(--paper);
       border: 1px solid #cbd5e1;
-      border-radius: 0.65rem;
+      border-radius: 0.6rem;
       outline: none;
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
-    input[type="email"]:focus {
+    input:focus, textarea:focus {
       border-color: var(--water);
       background: white;
       box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.12);
     }
+    textarea { min-height: 90px; resize: vertical; line-height: 1.5; }
 
     .submit {
       width: 100%;
-      margin-top: 1.25rem;
+      margin-top: 0.75rem;
       padding: 0.95rem 1.5rem;
       background: var(--water);
       color: white;
@@ -129,28 +146,14 @@
     .submit:hover { transform: translateY(-1px); }
     .submit svg { flex-shrink: 0; }
 
-    .request-link {
-      text-align: center;
-      margin-top: 1.5rem;
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
-    .request-link a {
-      color: var(--water);
-      text-decoration: none;
-      font-weight: 500;
-    }
-    .request-link a:hover { text-decoration: underline; }
-
     .back {
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      margin-top: 2rem;
+      margin-top: 1.75rem;
       color: var(--muted);
       font-size: 0.85rem;
       text-decoration: none;
-      transition: color 0.15s ease;
     }
     .back:hover { color: var(--deep); }
   </style>
@@ -162,53 +165,59 @@
     <div class="container">
       <header>
         {{ icon("wave-decoration", class="wave-mark") }}
-        <h1>Welkom in het bewonersportaal.</h1>
-        <p>Vul je e-mailadres in. We sturen je een eenmalige code waarmee je binnen kan.</p>
+        <h1>Toegang aanvragen</h1>
+        <p>Laat hier weten wie je bent. De beheerder krijgt een seintje en kijkt er zo snel mogelijk naar.</p>
       </header>
 
       <div class="card">
         {% if error %}
         <div class="alert" role="alert">
           {{ icon("alert-triangle", size=20, stroke=2) }}
-          <span>{{ error }}</span>
+          <span>
+            {{ error }}
+            {% if already_allowed %}
+              <br /><a href="{{ url_for('portaal_login') }}">Direct naar inloggen</a>
+            {% endif %}
+          </span>
         </div>
         {% endif %}
 
-        <form method="post" action="{{ url_for('portaal_login') }}" novalidate>
-          <label for="email">E-mailadres</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value="{{ email or '' }}"
-            placeholder="jij@voorbeeld.nl"
-            autocomplete="email"
-            autocapitalize="none"
-            autocorrect="off"
-            spellcheck="false"
-            required
-            autofocus
-          />
+        <form method="post" action="{{ url_for('portaal_aanvragen') }}" novalidate>
+          <div class="row two-cols">
+            <div>
+              <label for="voornaam">Voornaam</label>
+              <input type="text" id="voornaam" name="voornaam" value="{{ voornaam or '' }}" required autofocus autocomplete="given-name" />
+            </div>
+            <div>
+              <label for="achternaam">Achternaam</label>
+              <input type="text" id="achternaam" name="achternaam" value="{{ achternaam or '' }}" required autocomplete="family-name" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="email">E-mailadres</label>
+              <input type="email" id="email" name="email" value="{{ email or '' }}" placeholder="jij@voorbeeld.nl" required autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="motivatie">Korte toelichting <span style="color: var(--muted); font-weight: 400;">(optioneel)</span></label>
+              <textarea id="motivatie" name="motivatie" placeholder="Bijvoorbeeld: ik koop kavel 12 aan de Sluiskade.">{{ motivatie or '' }}</textarea>
+            </div>
+          </div>
+
           <button class="submit" type="submit">
-            Stuur me een code
+            Aanvraag versturen
             {{ icon("arrow-right", size=18, stroke=2.25) }}
           </button>
         </form>
-
-        <div class="request-link">
-          {% if show_request_link %}
-            Nog geen toegang?
-            <a href="{{ url_for('portaal_aanvragen') }}">Vraag het aan via een kort formulier.</a>
-          {% else %}
-            Nog geen account?
-            <a href="{{ url_for('portaal_aanvragen') }}">Vraag toegang aan</a>
-          {% endif %}
-        </div>
       </div>
 
-      <a class="back" href="{{ url_for('index') }}">
+      <a class="back" href="{{ url_for('portaal_login') }}">
         {{ icon("arrow-left", size=16, stroke=2.25) }}
-        Terug naar de startpagina
+        Terug naar inloggen
       </a>
     </div>
   </main>

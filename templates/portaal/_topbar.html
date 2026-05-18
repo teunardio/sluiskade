@@ -1,0 +1,75 @@
+{#
+   Bewoners-portaal topbar with brand + current email + logout.
+   Usage:
+       {% from "portaal/_topbar.html" import topbar %}
+       {{ topbar(email) }}
+#}
+
+{% macro topbar(email) %}
+<nav class="portaal-topbar" aria-label="Bewonersportaal navigatie">
+  <a class="portaal-brand" href="{{ url_for('portaal_gallery') }}">Sluis<span>kade</span></a>
+  <div class="portaal-topbar-right">
+    <span class="portaal-email">{{ email }}</span>
+    <form method="post" action="{{ url_for('portaal_logout') }}" class="portaal-logout-form">
+      <button class="portaal-logout" type="submit">Uitloggen</button>
+    </form>
+  </div>
+</nav>
+
+<style>
+  .portaal-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.5rem;
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid #e2e8f0;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .portaal-brand {
+    font-weight: 700;
+    color: #0c4a6e;
+    text-decoration: none;
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+  }
+  .portaal-brand span { color: #0ea5e9; font-weight: 400; }
+  .portaal-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+  }
+  .portaal-email {
+    color: #64748b;
+    max-width: 18ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  @media (max-width: 480px) {
+    .portaal-email { display: none; }
+  }
+  .portaal-logout-form { margin: 0; }
+  .portaal-logout {
+    padding: 0.4rem 0.9rem;
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85rem;
+    transition: all 0.15s ease;
+  }
+  .portaal-logout:hover {
+    color: #0c4a6e;
+    border-color: #0c4a6e;
+    background: white;
+  }
+</style>
+{% endmacro %}

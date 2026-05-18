@@ -78,13 +78,136 @@ def healthz():
 
 @app.route("/portaal")
 def portaal_index():
-    """Bewoners landing page. Redirects to login when not authenticated."""
+    """Bewoners landing: login if no session, otherwise straight to gallery."""
     if not bewoner_auth.has_valid_bewoner_session():
         return redirect(url_for("portaal_login"))
+    return redirect(url_for("portaal_gallery"))
+
+
+@app.route("/portaal/gallery")
+@bewoner_auth.require_bewoner_session
+def portaal_gallery():
+    """Show all photos for logged-in bewoners (newest first)."""
+    photos = db.list_photos(limit=200)
     return render_template(
-        "portaal/index.html",
+        "portaal/gallery.html",
+        photos=photos,
+        total_photos=db.count_photos(),
         email=bewoner_auth.get_current_bewoner_email(),
     )
+
+
+@app.route("/portaal/upload", methods=["GET", "POST"])
+@bewoner_auth.require_bewoner_session
+def portaal_upload():
+    """Bewoners can also upload photos (their own from a walk past the site)."""
+    email = bewoner_auth.get_current_bewoner_email()
+
+    if request.method == "POST":
+        return _handle_bewoner_upload(email)
+
+    return render_template(
+        "portaal/upload.html",
+        email=email,
+        total_photos=db.count_photos(),
+        error=request.args.get("error"),
+    )
+
+
+def _handle_bewoner_upload(email: str):
+    """Same pipeline as sluiswachter upload, tagged with source=bewoner."""
+    files = [f for f in request.files.getlist("photos") if f and f.filename]
+    if not files:
+        return redirect(url_for("portaal_upload", error="Geen foto's geselecteerd."))
+
+    saved_ids: list[int] = []
+    errors: list[tuple[str, str]] = []
+
+    for f in files:
+        try:
+            result = save_photo(f)
+            photo_id = db.insert_photo(
+                filename=result.filename,
+                thumb_filename=result.thumb_filename,
+                source="bewoner",
+                uploader_email=email,
+                width=result.width,
+                height=result.height,
+                file_size=result.file_size,
+            )
+            saved_ids.append(photo_id)
+        except PhotoError as exc:
+            errors.append((f.filename, str(exc)))
+            app.logger.warning("Bewoner upload failed for %s: %s", f.filename, exc)
+        except Exception:  # noqa: BLE001
+            errors.append((f.filename, "Onverwachte fout, de beheerder kijkt ernaar."))
+            app.logger.exception("Unexpected bewoner upload error for %s", f.filename)
+
+    if not saved_ids:
+        first_error = errors[0][1] if errors else "Onbekende fout."
+        return redirect(url_for("portaal_upload", error=first_error))
+
+    # Land back on the gallery so they see their photo at the top
+    return redirect(url_for("portaal_gallery"))
+
+
+@app.route("/portaal/foto/<int:photo_id>")
+@bewoner_auth.require_bewoner_session
+def portaal_view_photo(photo_id: int):
+    """Full-screen single photo view for bewoners."""
+    photo = db.get_photo(photo_id)
+    if not photo or photo.get("deleted_at"):
+        abort(404)
+    return render_template("portaal/foto.html", photo=photo)
+
+
+@app.route("/portaal/aanvragen", methods=["GET", "POST"])
+def portaal_aanvragen():
+    """Public access-request form. No auth needed."""
+    if request.method == "POST":
+        voornaam = request.form.get("voornaam", "").strip()
+        achternaam = request.form.get("achternaam", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        motivatie = request.form.get("motivatie", "").strip() or None
+
+        # Basic validation
+        if not voornaam or not achternaam or not email or "@" not in email:
+            return render_template(
+                "portaal/aanvragen.html",
+                error="Vul je voornaam, achternaam en een geldig e-mailadres in.",
+                voornaam=voornaam,
+                achternaam=achternaam,
+                email=email,
+                motivatie=motivatie,
+            )
+
+        # If they're already on the whitelist, skip the request and
+        # just nudge them to the login page.
+        if db.is_email_allowed(email):
+            return render_template(
+                "portaal/aanvragen.html",
+                error="Je hebt al toegang. Ga naar inloggen en vul je e-mailadres in.",
+                voornaam=voornaam,
+                achternaam=achternaam,
+                email=email,
+                motivatie=motivatie,
+                already_allowed=True,
+            )
+
+        request_id = db.save_access_request(email, voornaam, achternaam, motivatie)
+        req = db.get_access_request(request_id)
+        mail.send_access_request_notification(req)
+        app.logger.info("New access request from %s", email)
+
+        return redirect(url_for("portaal_aanvragen_bedankt"))
+
+    return render_template("portaal/aanvragen.html")
+
+
+@app.route("/portaal/aanvragen/bedankt")
+def portaal_aanvragen_bedankt():
+    """Confirmation page after submitting an access request."""
+    return render_template("portaal/aanvragen_bedankt.html")
 
 
 @app.route("/portaal/login", methods=["GET", "POST"])
@@ -305,10 +428,16 @@ def sluis_bedankt():
 # Media serving (auth-checked)
 # ---------------------------------------------------------------------------
 
+def _has_any_user_session() -> bool:
+    """Either a sluiswachter QR session or a bewoner login grants media access."""
+    return has_valid_sluis_session() or bewoner_auth.has_valid_bewoner_session()
+
+
 @app.route("/media/thumbs/<int:photo_id>")
-@require_sluis_session
 def serve_thumb(photo_id: int):
-    """Serve a thumbnail. Widens to bewoner-session in Sprint 2."""
+    """Serve a thumbnail. Allowed for sluis OR bewoner sessions."""
+    if not _has_any_user_session():
+        abort(403)
     photo = db.get_photo(photo_id)
     if not photo or photo.get("deleted_at") or not photo.get("thumb_filename"):
         abort(404)
@@ -320,9 +449,10 @@ def serve_thumb(photo_id: int):
 
 
 @app.route("/media/photos/<int:photo_id>")
-@require_sluis_session
 def serve_photo(photo_id: int):
-    """Serve a full-size photo. Widens to bewoner-session in Sprint 2."""
+    """Serve a full-size photo. Allowed for sluis OR bewoner sessions."""
+    if not _has_any_user_session():
+        abort(403)
     photo = db.get_photo(photo_id)
     if not photo or photo.get("deleted_at"):
         abort(404)

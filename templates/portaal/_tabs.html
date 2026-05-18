@@ -1,0 +1,43 @@
+{#
+   Portaal tab-strip: Galerij / Uploaden segmented control.
+   Usage:
+       {% from "portaal/_tabs.html" import tabs %}
+       {{ tabs(current='gallery') }}   OR   {{ tabs(current='upload') }}
+#}
+
+{% macro tabs(current) %}
+<nav class="portaal-tabs" aria-label="Sectie navigatie">
+  <a class="portaal-tab {% if current == 'gallery' %}active{% endif %}"
+     href="{{ url_for('portaal_gallery') }}">Galerij</a>
+  <a class="portaal-tab {% if current == 'upload' %}active{% endif %}"
+     href="{{ url_for('portaal_upload') }}">Uploaden</a>
+</nav>
+
+<style>
+  .portaal-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    margin: 0 auto 1.75rem;
+    width: fit-content;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  }
+  .portaal-tab {
+    padding: 0.5rem 1.25rem;
+    border-radius: 999px;
+    color: #64748b;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .portaal-tab:hover { color: #0c4a6e; }
+  .portaal-tab.active {
+    background: #0ea5e9;
+    color: white;
+  }
+</style>
+{% endmacro %}

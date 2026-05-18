@@ -38,12 +38,26 @@ def main() -> int:
         return 3
 
     h = generate_password_hash(pw1, method="pbkdf2:sha256", salt_length=16)
+    h_escaped = h.replace("$", "$$")
     print()
-    print("Voeg deze regel toe aan .env (en aan Coolify):")
+    print("=" * 70)
+    print("Voor een lokaal .env bestand (gewone dollars):")
+    print("=" * 70)
     print()
     print(f"  ADMIN_PASSWORD_HASH={h}")
     print()
-    print("Het plaintext wachtwoord staat nergens opgeslagen, alleen deze hash.")
+    print("=" * 70)
+    print("Voor Coolify Environment Variables (dollars verdubbeld):")
+    print("=" * 70)
+    print()
+    print(f"  ADMIN_PASSWORD_HASH={h_escaped}")
+    print()
+    print("Coolify gebruikt Docker Compose onder de motorkap, die enkele")
+    print("dollar-tekens als variabele-expansie ziet en je salt opvreet.")
+    print("Met dubbele dollars wordt 'ie netjes naar enkele teruggebracht")
+    print("in de container.")
+    print()
+    print("Het plaintext wachtwoord staat nergens opgeslagen, alleen de hash.")
     print()
     return 0
 

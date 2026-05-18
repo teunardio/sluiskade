@@ -55,12 +55,20 @@ MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 MAX_FILES_PER_UPLOAD = 10
 
 # Image dimensions
-MAX_DIMENSION = 2400      # longest side of stored photo
+# Mikt op de WhatsApp-zone: scherp op elk telefoon/laptop scherm, niet absurd
+# zwaar. 1920px langste zijde = Full HD, ruim genoeg voor 4K monitors via
+# CSS-scaling. iPhone 12MP foto (4032x3024) wordt zo ~1920x1440.
+# Voor wie een groter origineel wil: bewoners kunnen downloads via de
+# galerij doen (wat onze opgeslagen 1920px versie levert, niet hoger).
+MAX_DIMENSION = 1920      # longest side of stored photo
 THUMB_WIDTH = 480         # masonry grid thumbnail width
 
 # JPEG quality
-ORIG_QUALITY = 88
-THUMB_QUALITY = 82
+# q=82 met progressive + optimize is de sweet spot: visueel nagenoeg
+# identiek aan q=90, maar 30-40% kleiner. Typische output voor een
+# 1920px foto: 250-450KB ipv 800KB-2MB voorheen.
+ORIG_QUALITY = 82
+THUMB_QUALITY = 78
 
 # Explicit image-only whitelist. Anything detected outside this set is
 # rejected · including ALL video MIME types.
@@ -222,13 +230,26 @@ def save_photo(file_storage) -> SavedPhoto:
     orig_path = os.path.join(PHOTOS_DIR, filename)
     thumb_path = os.path.join(THUMBS_DIR, thumb_filename)
 
-    img.save(orig_path, "JPEG", quality=ORIG_QUALITY, optimize=True)
+    # progressive=True laat de foto top-to-bottom binnenkomen (sneller
+    # gevoelde load over trage 4G). optimize=True scheelt nog eens 5-10%
+    # bestandsgrootte door tabellen te optimaliseren.
+    img.save(
+        orig_path, "JPEG",
+        quality=ORIG_QUALITY,
+        optimize=True,
+        progressive=True,
+    )
 
     # 10. Generate proportional thumbnail
     ratio = THUMB_WIDTH / img.width
     thumb_h = max(1, int(img.height * ratio))
     thumb = img.resize((THUMB_WIDTH, thumb_h), Image.LANCZOS)
-    thumb.save(thumb_path, "JPEG", quality=THUMB_QUALITY, optimize=True)
+    thumb.save(
+        thumb_path, "JPEG",
+        quality=THUMB_QUALITY,
+        optimize=True,
+        progressive=True,
+    )
 
     return SavedPhoto(
         filename=filename,

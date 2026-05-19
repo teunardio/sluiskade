@@ -6,7 +6,7 @@ Hoe je het Sluiskade-beheerpaneel gebruikt · voor wanneer je het paar weken nie
 
 Ga naar `https://sluiskade.com/portaal/login` (geen aparte `/admin/login` · zelfde flow als bewoners).
 
-1. Vul `beheer@sluiskade.com` in
+1. Vul je `ADMIN_EMAIL` in (zie Coolify env-vars)
 2. Check de inbox van die mailbox voor een 6-cijferige code
 3. Vul de code in
 4. Vul je admin-wachtwoord in
@@ -113,7 +113,7 @@ Wil je alle bestaande posters in één klap invalideren (poster gestolen, jouw s
 
 1. Check `/admin/bewoners` of hun email op de lijst staat
 2. Zo niet, voeg toe · en stuur ze handmatig een berichtje dat ze kunnen inloggen (geen auto-mail bij handmatige add)
-3. Wel op de lijst maar OTP komt niet aan? Check spam-folder. Of vraag ze om beheer@sluiskade.com aan contacten toe te voegen. Mocht het structureel zijn: check Resend dashboard voor delivery-status
+3. Wel op de lijst maar OTP komt niet aan? Check spam-folder. Of vraag ze om de afzender van de OTP-mail aan contacten toe te voegen. Mocht het structureel zijn: check Resend dashboard voor delivery-status
 
 ### Sluiswachter belt op met "QR werkt niet"
 

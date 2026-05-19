@@ -70,7 +70,7 @@ Daarna inloggen via `http://localhost:5000/portaal/login` met je `ADMIN_EMAIL`. 
 ============================================================
 [mail.py DEV] No RESEND_API_KEY, would have sent:
   To:      jij@voorbeeld.nl
-  From:    Sluiskade <beheer@sluiskade.com>
+  From:    Sluiskade <admin@example.com>
   Subject: Admin-inlogcode Sluiskade: 472108
 ------------------------------------------------------------
 ... (volledige HTML van de mail)

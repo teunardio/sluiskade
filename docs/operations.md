@@ -8,7 +8,7 @@ Alles wat je nodig hebt om Sluiskade in productie te draaien, op te lossen wanne
 - **Proxy**: Traefik met automatische Let's Encrypt cert renewal
 - **Volume**: persistent `/data` mount voor SQLite + foto's
 - **CDN/DNS**: Cloudflare (proxied A record)
-- **Mail**: Resend voor outbound, Stalwart voor inbound (`beheer@sluiskade.com`)
+- **Mail**: Resend voor outbound, Stalwart voor inbound (eigen mailbox op het domein)
 
 Coolify auto-deployt op elke push naar `main` via GitHub webhook. Build pipeline runt `Dockerfile` → installeert Python deps → start gunicorn via `Procfile`.
 
@@ -44,8 +44,8 @@ Alle vars staan met uitleg in [`.env.example`](../.env.example). Verplicht in pr
 | `QR_TOKEN_SECRET` | Idem (apart van SECRET_KEY) |
 | `QR_TOKEN_VERSION` | `1` (bump om alle QR's te invalideren) |
 | `RESEND_API_KEY` | Maak aan op resend.com/api-keys |
-| `MAIL_FROM` | `Sluiskade <beheer@sluiskade.com>` |
-| `ADMIN_EMAIL` | `beheer@sluiskade.com` |
+| `MAIL_FROM` | `Sluiskade <admin@example.com>` (jouw eigen verified domain) |
+| `ADMIN_EMAIL` | `admin@example.com` (zelfde adres als waar OTPs heen moeten) |
 | `ADMIN_PASSWORD_HASH` | Zie [Admin wachtwoord instellen](#admin-wachtwoord-instellen) |
 | `STORAGE_QUOTA_GB` | `20` |
 | `DATA_PATH` | `/data` |
@@ -186,7 +186,7 @@ Als `Aantal $: 1` → hash is corrupt. Fix: verdubbel `$` naar `$$` in Coolify e
 
 Eerste paar weken na launch is normaal voor nieuwe domeinen. Verbetert vanzelf met goede engagement-signalen. Quick wins:
 
-1. Stuur jezelf 3-5 OTPs naar Gmail/Outlook/iCloud, sleep ze uit spam, voeg `beheer@sluiskade.com` toe aan contacten
+1. Stuur jezelf 3-5 OTPs naar Gmail/Outlook/iCloud, sleep ze uit spam, voeg de afzender toe aan je contacten
 2. Zet Google Postmaster Tools aan voor monitoring
 3. Voeg in de welkomstmail of bedankt-pagina een hint toe: "check ook je spam-map, ons domein is nieuw"
 
